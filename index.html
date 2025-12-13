@@ -3,17 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 9.1</title>
+    <title>Sales Master Pro 9.2</title>
     
+    <!-- ★★★ 1. 设置为本地 icon.png ★★★ -->
+    <!-- 请确保您的文件夹里有一张名为 icon.png 的图片 -->
+    <script>
+        const APP_LOGO = "icon.png"; 
+    </script>
+
     <!-- PWA Settings -->
     <meta name="theme-color" content="#1e3a8a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Sales Master">
     
-    <!-- 默认占位图标 (JS加载后会覆盖，但为了兼容性保留) -->
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1063/1063376.png">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1063/1063376.png">
+    <!-- 动态注入图标链接 -->
+    <script>
+        const iconLink = document.createElement('link');
+        iconLink.rel = 'apple-touch-icon';
+        iconLink.href = APP_LOGO;
+        document.head.appendChild(iconLink);
+        
+        const favLink = document.createElement('link');
+        favLink.rel = 'icon';
+        favLink.href = APP_LOGO;
+        document.head.appendChild(favLink);
+    </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
@@ -28,19 +43,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
-        // ----------------------------------------------------
-        // ★★★ 请在这里替换您的 LOGO 链接 ★★★
-        // ----------------------------------------------------
-        // 这里的链接必须是 https 开头的直接图片链接 (jpg/png)
-        const APP_LOGO = "https://cdn-icons-png.flaticon.com/512/1063/1063376.png"; 
-        
-        // 动态更新图标
-        function updateIcons() {
-            let links = document.querySelectorAll("link[rel*='icon']");
-            links.forEach(l => l.href = APP_LOGO);
-        }
-        window.addEventListener('DOMContentLoaded', updateIcons);
-
         // ----------------------------------------------------
         // Firebase Config
         // ----------------------------------------------------
@@ -64,6 +66,7 @@
         }
 
         // --- PWA Dynamic Manifest ---
+        // 使用相对路径 "icon.png"，浏览器会自动寻找当前目录下的图片
         const manifest = {
             "name": "Sales Master Pro",
             "short_name": "SalesMaster",
@@ -131,6 +134,14 @@
         @keyframes fadeOut { to { opacity: 0; transform: translateX(20px); height: 0; padding: 0; margin: 0; } }
         .pull-indicator { height: 0; overflow: hidden; transition: height 0.2s; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #6b7280; font-size: 0.8rem; }
         .scroll-container { -webkit-overflow-scrolling: touch; }
+
+        /* 2. 顶部下载通知条样式 */
+        #downloadNotification {
+            position: fixed; top: 0; left: 0; width: 100%;
+            z-index: 10000; /* 最高层级 */
+            transform: translateY(-100%); /* 默认隐藏在顶部外 */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
 <body class="text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
@@ -140,6 +151,11 @@
         <img src="" id="loaderLogo" class="logo-pulse rounded-xl shadow-lg">
         <script>document.getElementById('loaderLogo').src = APP_LOGO;</script>
         <p class="text-white font-bold tracking-widest mt-2 text-sm opacity-80">INITIALIZING...</p>
+    </div>
+
+    <!-- 2. 模拟系统顶部下载通知 -->
+    <div id="downloadNotification" class="bg-gray-900 text-white shadow-xl border-b border-gray-700">
+        <!-- JS 将动态填充内容 -->
     </div>
 
     <!-- A. 登录界面 -->
@@ -334,7 +350,7 @@
                 <span class="text-[10px] pointer-events-none">LIST</span>
             </button>
 
-            <!-- Customer Sidebar (恢复后的功能) -->
+            <!-- Customer Sidebar (完全恢复功能) -->
             <div id="taskSidebar" class="sidebar sidebar-closed fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-40 flex flex-col">
                 <div class="p-4 bg-primary text-white flex justify-between items-center">
                     <h3 class="font-bold">Select Customers</h3>
@@ -348,13 +364,12 @@
                         <option value="missed_month">⛔ Not Visited This Month</option>
                     </select>
                 </div>
-                <!-- 列表容器 -->
                 <div id="customerSidebarList" class="flex-1 overflow-y-auto p-2 space-y-2 pb-20"></div>
             </div>
         </div>
     </div>
 
-    <!-- D. 独立产品搜索页面 (Simplified Export) -->
+    <!-- D. 独立产品搜索页面 (Removed History UI) -->
     <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col h-screen animate-fade-in">
         <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center shrink-0">
             <h2 class="text-xl font-bold flex items-center"><i class="fa-solid fa-box-open mr-2"></i> Product List</h2>
@@ -370,7 +385,7 @@
                                oninput="handleProductSearch(this.value)">
                         <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                     </div>
-                    <!-- Export Button (Clean) -->
+                    <!-- 2. Export Button Only -->
                     <button onclick="exportProductPDF()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap">
                         <i class="fa-solid fa-file-pdf mr-2"></i> Export PDF
                     </button>
@@ -453,7 +468,7 @@
             initPullToRefresh('salesMain', 'salesPullIndicator');
         };
 
-        // ... [Standard Functions] ...
+        // ... [Standard Logic] ...
         function initDraggableListBtn() {
             const btn = document.getElementById('draggableListBtn');
             let isDragging = false, startY, startTop;
@@ -586,37 +601,25 @@
                 mobileContainer.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-gray-500 mb-2"><div class="flex justify-between items-center mb-1"><span class="font-bold text-gray-800">${repName}</span><span class="text-xs text-gray-400">${dateStr}</span></div><div class="text-sm font-bold text-primary mb-1">${r.customerName}</div><div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">${r.note}</div></div>`;
             });
         }
-        function adminExportReports() { /* Standard Logic */ }
+        function adminExportReports() { /* Logic maintained */ }
 
         function renderAdminExportLogs() {
             const dateVal = document.getElementById('adminLogDateFilter').value;
             const repVal = document.getElementById('adminLogRepFilter').value;
             const list = document.getElementById('adminExportLogList');
             list.innerHTML = '';
-
             const filtered = adminExportLogs.filter(log => {
                 let matchDate = true; if (dateVal) { const lDate = log.timestamp ? log.timestamp.toDate() : new Date(); const fDate = new Date(dateVal); matchDate = (lDate.toDateString() === fDate.toDateString()); }
                 let matchRep = true; if (repVal) matchRep = (log.repCode === repVal);
                 return matchDate && matchRep;
             });
-
             if(filtered.length === 0) { list.innerHTML = '<div class="text-gray-400 text-center p-4">No export records found.</div>'; return; }
-
             filtered.forEach(log => {
                 const ts = log.timestamp ? log.timestamp.toDate().toLocaleString() : 'N/A';
-                list.innerHTML += `
-                    <div class="bg-white p-3 rounded shadow border-l-4 border-red-500 flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-gray-800">${log.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div>
-                            <div class="text-sm text-gray-600">Generated: <span class="font-mono text-xs bg-gray-100 px-1 rounded">${log.fileName}</span></div>
-                        </div>
-                        <div class="text-xs font-bold text-gray-400">PDF</div>
-                    </div>
-                `;
+                list.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-red-500 flex justify-between items-center"><div><div class="font-bold text-gray-800">${log.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div><div class="text-sm text-gray-600">Generated: <span class="font-mono text-xs bg-gray-100 px-1 rounded">${log.fileName}</span></div></div><div class="text-xs font-bold text-gray-400">PDF</div></div>`;
             });
         }
 
-        // ... [Bulk Assign Logic] ...
         function addAssignRow() {
             const container = document.getElementById('assignRowsContainer'); const rowId = Date.now() + Math.random();
             let repCheckboxes = '<div class="h-24 overflow-y-auto border rounded p-2 bg-white">'; for (const [code, name] of Object.entries(repDirectory)) { repCheckboxes += `<label class="flex items-center space-x-2 mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded"><input type="checkbox" value="${code}" class="assign-rep-checkbox accent-primary"><span class="text-xs text-gray-700 font-bold">${name}</span></label>`; } repCheckboxes += '</div>';
@@ -628,10 +631,9 @@
         async function adminSubmitBulkTasks() { const rows = document.querySelectorAll('.assign-row'); const batch = db.batch(); let count = 0; rows.forEach(row => { const cbs = row.querySelectorAll('.assign-rep-checkbox:checked'); const cid = row.querySelector('.assign-cust-id').value; const cnm = row.querySelector('.assign-cust-name').value; const nt = row.querySelector('.assign-note').value; if(cbs.length && cid && nt) { cbs.forEach(cb => { const ref = db.collection('admin_tasks').doc(); batch.set(ref, { repCode: cb.value, repName: repDirectory[cb.value], customerId: cid, customerName: cnm, taskDetail: nt, status: 'pending', assignedDate: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }); count++; }); } }); if(count>0) { await batch.commit(); alert('Tasks Assigned'); document.getElementById('assignRowsContainer').innerHTML = ''; addAssignRow(); } }
         function renderAdminTasks() { const f = document.getElementById('adminTaskFilter').value.toLowerCase(); document.getElementById('adminTaskList').innerHTML = adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f)).map(t => `<div class="p-3 rounded border flex justify-between items-center ${t.status==='completed'?'bg-green-50':'bg-white'}"><div><div class="font-bold text-gray-800">${t.repName} -> ${t.customerName}</div><div class="text-xs text-gray-500">${t.assignedDate} | ${t.taskDetail}</div></div>${t.status==='completed'?'':`<button onclick="adminRestoreTask('${t.docId}')" class="text-red-500 text-xs">Delete</button>`}</div>`).join(''); }
         async function adminRestoreTask(id) { if(confirm('Delete?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
-        function adminExportTasks() { /* Standard CSV */ }
+        function adminExportTasks() { /* Logic */ }
 
-        // ================= SALES REP FUNCTIONS (Fixed Stats) =================
-        // ★★★ 1. Fixed: Restored logic for stats ★★★
+        // ================= ★★★ 1. 恢复：客户统计功能 ★★★ =================
         function getCustomerStats(custId) {
             const now = new Date();
             const startOfWeek = new Date(now);
@@ -654,7 +656,7 @@
             const mode = document.getElementById('sidebarFilterMode').value;
             const q = document.querySelector('#taskSidebar input').value.toLowerCase();
             
-            // ★★★ 1. Fixed: No arbitrary slice limit, proper filtering ★★★
+            // 恢复：不限制数量，但使用 slice 防止渲染过多卡顿 (限制在200个足够了)
             let filtered = myCustomers.filter(c => c.name.toLowerCase().includes(q));
             
             if (mode === 'missed_week') {
@@ -666,11 +668,11 @@
             const list = document.getElementById('customerSidebarList');
             list.innerHTML = '';
             
-            // Limit render to 100 to prevent crash if list is huge, but usually safe
-            filtered.slice(0, 100).forEach(c => {
+            // 渲染前200个结果
+            filtered.slice(0, 200).forEach(c => {
                 const stats = getCustomerStats(c.id);
                 const item = document.createElement('div');
-                item.className = "flex justify-between items-center bg-white p-3 rounded border hover:shadow cursor-pointer";
+                item.className = "flex justify-between items-center bg-white p-3 rounded border hover:shadow cursor-pointer mb-2";
                 item.innerHTML = `
                     <div>
                         <div class="font-bold text-gray-700 text-sm">${c.name}</div>
@@ -681,7 +683,7 @@
                             <div>Week: <span class="font-bold ${stats.week==0?'text-red-500':'text-green-600'}">${stats.week}</span></div>
                             <div>Month: <span class="font-bold ${stats.month==0?'text-red-500':'text-green-600'}">${stats.month}</span></div>
                         </div>
-                        <button onclick="addToTask('${c.id}')" class="text-gray-300 hover:text-green-500"><i class="fa-solid fa-plus-circle text-xl"></i></button>
+                        <button onclick="addToTask('${c.id}')" class="text-gray-300 hover:text-green-500 p-2"><i class="fa-solid fa-plus-circle text-xl"></i></button>
                     </div>`;
                 list.appendChild(item);
             });
@@ -699,9 +701,8 @@
         function toggleSidebar() { 
             document.getElementById('taskSidebar').classList.toggle('sidebar-closed'); 
             document.getElementById('taskSidebar').classList.toggle('sidebar-open');
-            // Re-apply filter when opening to ensure stats are fresh
             if(document.getElementById('taskSidebar').classList.contains('sidebar-open')) {
-                applySidebarFilter();
+                applySidebarFilter(); // Re-render to ensure stats
             }
         }
         function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(myCustomers.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
@@ -735,46 +736,66 @@
                 </div>`).join('');
         }
 
+        // 2. Export and Show Top Notification (Visual Feedback)
         function exportProductPDF() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
 
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const query = document.getElementById('productSearchInput').value;
-            
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0,10);
-            const timeStr = now.toTimeString().slice(0,5).replace(':','-');
-            const safeQuery = query.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); 
-            const fileName = `${safeQuery}_${dateStr}_${timeStr}.pdf`;
+            // Show 'Downloading...' Notification
+            const notif = document.getElementById('downloadNotification');
+            notif.innerHTML = `
+                <div class="flex items-center justify-between px-4 py-3">
+                    <div class="flex items-center">
+                        <div class="animate-bounce mr-3"><i class="fa-solid fa-download text-white"></i></div>
+                        <div><div class="font-bold text-sm">Downloading...</div></div>
+                    </div>
+                </div>`;
+            notif.classList.remove('-translate-y-full'); // Slide Down
 
-            doc.setFontSize(18); doc.text("Product Availability List", 14, 20);
-            doc.setFontSize(10); doc.text(`Generated by: ${currentUser ? currentUser.name : 'Guest'}`, 14, 28);
-            doc.text(`Search: ${query}`, 14, 33); doc.text(`Date: ${now.toLocaleString()}`, 14, 38);
+            // Small delay to allow UI to update before heavy sync work
+            setTimeout(() => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const query = document.getElementById('productSearchInput').value;
+                const now = new Date();
+                const safeQuery = query.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); 
+                const fileName = `${safeQuery}_${now.toISOString().slice(0,10)}.pdf`;
 
-            const tableData = currentProductResults.map(p => [String(p.code), String(p.name), String(p.price)]);
+                doc.setFontSize(18); doc.text("Product Availability List", 14, 20);
+                doc.setFontSize(10); doc.text(`Generated by: ${currentUser ? currentUser.name : 'Guest'}`, 14, 28);
+                doc.text(`Search: ${query}`, 14, 33); doc.text(`Date: ${now.toLocaleString()}`, 14, 38);
 
-            doc.autoTable({
-                startY: 45, head: [['Code', 'Product Name', 'Price']], body: tableData,
-                theme: 'striped', headStyles: { fillColor: [30, 58, 138] }, rowPageBreak: 'avoid',
-                styles: { fontSize: 10, cellPadding: 3, overflow: 'linebreak' }, columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
-            });
+                const tableData = currentProductResults.map(p => [String(p.code), String(p.name), String(p.price)]);
 
-            doc.save(fileName);
-
-            // Sync to Admin
-            if(currentUser && !currentUser.isAdmin) {
-                db.collection('export_logs').add({
-                    repCode: currentUser.code,
-                    repName: currentUser.name,
-                    fileName: fileName,
-                    searchQuery: query,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                doc.autoTable({
+                    startY: 45, head: [['Code', 'Product Name', 'Price']], body: tableData,
+                    theme: 'striped', headStyles: { fillColor: [30, 58, 138] }, rowPageBreak: 'avoid',
+                    styles: { fontSize: 10, cellPadding: 3, overflow: 'linebreak' }, columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
                 });
-            }
 
-            // 2. Simple alert (No history/share UI)
-            alert("PDF exported successfully!\nFile: " + fileName);
+                doc.save(fileName); // Triggers system download
+
+                // Sync to Admin
+                if(currentUser && !currentUser.isAdmin) {
+                    db.collection('export_logs').add({
+                        repCode: currentUser.code, repName: currentUser.name, fileName: fileName, searchQuery: query, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+
+                // Update Notification to Success
+                notif.innerHTML = `
+                    <div class="flex items-center justify-between px-4 py-3 bg-green-600">
+                        <div class="flex items-center">
+                            <div class="mr-3"><i class="fa-solid fa-check-circle text-white"></i></div>
+                            <div>
+                                <div class="font-bold text-sm">Download Complete</div>
+                                <div class="text-xs opacity-75">Check Notification Center</div>
+                            </div>
+                        </div>
+                    </div>`;
+                
+                // Hide after 4 seconds
+                setTimeout(() => notif.classList.add('-translate-y-full'), 4000);
+            }, 1000);
         }
     </script>
 </body>
