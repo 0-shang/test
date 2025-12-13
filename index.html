@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 8.2</title>
+    <title>Sales Master Pro 8.3</title>
+    
+    <!-- PWA Settings -->
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sales Master">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1063/1063376.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -38,6 +46,42 @@
                 extend: { colors: { primary: '#1e3a8a', secondary: '#3b82f6', accent: '#f59e0b', danger: '#ef4444', success: '#10b981' } }
             }
         }
+
+        // --- PWA Dynamic Manifest (自动生成Manifest) ---
+        const manifest = {
+            "name": "Sales Master Pro",
+            "short_name": "SalesMaster",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#f3f4f6",
+            "theme_color": "#1e3a8a",
+            "orientation": "portrait",
+            "icons": [{
+                "src": "https://cdn-icons-png.flaticon.com/512/1063/1063376.png",
+                "sizes": "192x192",
+                "type": "image/png"
+            }, {
+                "src": "https://cdn-icons-png.flaticon.com/512/1063/1063376.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestURL;
+        document.head.appendChild(link);
+
+        // --- Service Worker 注册 (PWA必须) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered', reg))
+                    .catch(err => console.log('SW Failed', err));
+            });
+        }
     </script>
     
     <style>
@@ -48,12 +92,14 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
         
-        /* 侧边按钮样式 - 修改为白色 */
-        .side-btn {
-            transition: all 0.2s;
-            box-shadow: -2px 2px 8px rgba(0,0,0,0.15);
+        /* 侧边 LIST 按钮样式 */
+        #draggableListBtn {
+            transition: box-shadow 0.2s; 
+            box-shadow: -2px 2px 8px rgba(0,0,0,0.2);
+            touch-action: none; /* 关键：允许拖拽，阻止浏览器默认滚动 */
+            z-index: 50;
         }
-        .side-btn:active { transform: scale(0.95); }
+        #draggableListBtn:active { opacity: 0.9; box-shadow: -1px 1px 4px rgba(0,0,0,0.2); }
 
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #1e3a8a; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -63,9 +109,7 @@
         .pull-indicator.visible { height: 50px; }
         
         /* 修复搜索页滚动 */
-        .scroll-container {
-            -webkit-overflow-scrolling: touch; /* iOS 平滑滚动 */
-        }
+        .scroll-container { -webkit-overflow-scrolling: touch; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
@@ -225,7 +269,6 @@
                 <!-- Today's Task / Add Customer Button -->
                 <div class="max-w-5xl mx-auto mt-8 pb-24">
                     <div class="flex justify-between items-center mb-4">
-                        <!-- 修改：Customer 按钮改为 Today's Task 点击触发 -->
                         <button onclick="toggleSidebar()" class="flex items-center space-x-2 group hover:opacity-80 transition">
                             <h3 class="text-lg font-bold text-gray-800 border-l-4 border-accent pl-3 group-hover:text-primary">Today's Task</h3>
                             <span class="text-xs bg-primary text-white px-2 py-1 rounded-full"><i class="fa-solid fa-plus mr-1"></i> Add</span>
@@ -242,13 +285,11 @@
                 </div>
             </main>
 
-            <!-- SIDE BUTTONS - 仅保留 List 按钮，白色样式 -->
-            <div class="fixed right-0 top-1/2 transform -translate-y-1/2 z-30 flex flex-col items-end space-y-3">
-                <button onclick="openProductPage()" class="side-btn bg-white text-gray-800 font-bold py-3 pl-5 pr-4 rounded-l-full flex items-center gap-2 border border-r-0 border-gray-300">
-                    <span class="text-sm">List</span>
-                    <i class="fa-solid fa-box-open text-primary"></i>
-                </button>
-            </div>
+            <!-- SIDE BUTTONS - List 按钮 (可拖拽，短小) -->
+            <button id="draggableListBtn" class="fixed right-0 top-1/2 bg-white text-gray-800 font-bold py-2 pl-3 pr-2 rounded-l-lg flex flex-col items-center justify-center border border-r-0 border-gray-300 w-12 h-14 cursor-move">
+                <i class="fa-solid fa-box-open text-primary text-xl mb-1 pointer-events-none"></i>
+                <span class="text-[10px] pointer-events-none">LIST</span>
+            </button>
 
             <!-- Customer Sidebar -->
             <div id="taskSidebar" class="sidebar sidebar-closed fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-40 flex flex-col">
@@ -270,7 +311,6 @@
     </div>
 
     <!-- D. 独立产品搜索页面 (Product Search Overlay) -->
-    <!-- 修复：使用 h-screen 和 flex-col 确保滚动区域正确 -->
     <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col h-screen animate-fade-in">
         <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center shrink-0">
             <h2 class="text-xl font-bold flex items-center"><i class="fa-solid fa-box-open mr-2"></i> Product List</h2>
@@ -282,7 +322,7 @@
             <div class="bg-white p-4 rounded-lg shadow-sm mb-4 shrink-0">
                 <div class="flex flex-col md:flex-row gap-3">
                     <div class="relative flex-1">
-                        <input type="text" id="productSearchInput" placeholder="Search product by Name or Code..." 
+                        <input type="text" id="productSearchInput" placeholder="Ex: POWER RACK COROLLA" 
                                class="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent outline-none text-lg"
                                oninput="handleProductSearch(this.value)">
                         <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
@@ -298,18 +338,16 @@
             </div>
 
             <!-- Results List (Scrollable Area) -->
-            <!-- 修复：min-h-0 是 flex 容器内滚动的关键 -->
             <div id="productResultsContainer" class="flex-1 overflow-y-auto min-h-0 space-y-3 pb-10 scroll-container">
-                <!-- Results injected here -->
                 <div class="text-center text-gray-400 mt-10">
                     <i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i>
-                    <p>Enter a keyword to search products.</p>
+                    <p>Enter keywords to search (e.g., '101 COROLLA')</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Modals (Assigned / Report) -->
     <div id="assignedTaskModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-2xl h-3/4 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
@@ -357,10 +395,62 @@
         window.onload = function() {
             loadCSV();
             loadProductCSV(); 
+            initDraggableListBtn(); // New draggable logic
             checkSession();
             initPullToRefresh('adminMain', 'adminPullIndicator');
             initPullToRefresh('salesMain', 'salesPullIndicator');
         };
+
+        // --- Draggable List Button Logic (Updated) ---
+        function initDraggableListBtn() {
+            const btn = document.getElementById('draggableListBtn');
+            let isDragging = false;
+            let startY, startTop;
+
+            const handleStart = (e) => {
+                isDragging = false; // Reset status
+                const touch = e.touches ? e.touches[0] : e;
+                startY = touch.clientY;
+                startTop = btn.offsetTop;
+            };
+
+            const handleMove = (e) => {
+                const touch = e.touches ? e.touches[0] : e;
+                const diff = Math.abs(touch.clientY - startY);
+                
+                // If moved more than 5px, consider it a drag operation
+                if (diff > 5) isDragging = true;
+
+                if (isDragging) {
+                    e.preventDefault(); // Prevent page scroll
+                    let newTop = startTop + (touch.clientY - startY);
+                    
+                    // Boundary checks (keep within screen)
+                    const minTop = 50;
+                    const maxTop = window.innerHeight - 80;
+                    if (newTop < minTop) newTop = minTop;
+                    if (newTop > maxTop) newTop = maxTop;
+
+                    btn.style.top = newTop + 'px';
+                }
+            };
+
+            const handleEnd = () => {
+                // Drag ends
+            };
+
+            // Touch events
+            btn.addEventListener('touchstart', handleStart, {passive: false});
+            btn.addEventListener('touchmove', handleMove, {passive: false});
+            btn.addEventListener('touchend', handleEnd);
+
+            // Click event (only fire if NOT dragging)
+            btn.addEventListener('click', (e) => {
+                if (!isDragging) {
+                    openProductPage();
+                }
+            });
+        }
 
         // --- Session ---
         function checkSession() {
@@ -649,7 +739,7 @@
             closeReportModal();
         }
 
-        // ================= ★★★ PRODUCT SEARCH FUNCTIONS ★★★ =================
+        // ================= ★★★ PRODUCT SEARCH FUNCTIONS (UPDATED) ★★★ =================
         function openProductPage() {
             document.getElementById('productSearchPage').classList.remove('hidden');
         }
@@ -669,10 +759,19 @@
                 return;
             }
 
-            const q = val.toLowerCase();
-            currentProductResults = allProductData.filter(p => 
-                (p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)) && p.stock > 0
-            );
+            // ★★★ Multi-Keyword Search Logic (OR -> AND) ★★★
+            // Split input by spaces to get multiple keywords
+            const searchTerms = val.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+            
+            currentProductResults = allProductData.filter(p => {
+                // Combine Name and Code into one string for searching
+                const productString = (p.name + " " + p.code).toLowerCase();
+                
+                // Check if EVERY search term is present in the product string
+                const matchesAllKeywords = searchTerms.every(term => productString.includes(term));
+                
+                return matchesAllKeywords && p.stock > 0;
+            });
 
             badge.innerText = `${currentProductResults.length} results found`;
             
@@ -698,7 +797,6 @@
             container.innerHTML = html;
         }
 
-        // ★★★ 修复 PDF 导出问题 ★★★
         function exportProductPDF() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
 
@@ -711,7 +809,7 @@
             doc.text(`Generated by: ${currentUser ? currentUser.name : 'Guest'}`, 14, 28);
             doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 33);
 
-            // 修复字体问题：将所有内容强制转为String，避免数字格式导致特定代码显示异常
+            // Force all data to string to avoid format issues
             const tableData = currentProductResults.map(p => [
                 String(p.code), 
                 String(p.name), 
@@ -723,24 +821,21 @@
                 head: [['Code', 'Product Name', 'Price']],
                 body: tableData,
                 theme: 'striped',
-                headStyles: { fillColor: [30, 58, 138] }, // Primary color
-                // 修复分页问题：rowPageBreak: 'avoid' 防止一行内容被拆分到两页
+                headStyles: { fillColor: [30, 58, 138] }, 
                 rowPageBreak: 'avoid',
                 styles: { 
                     fontSize: 10, 
                     cellPadding: 3, 
-                    overflow: 'linebreak' // 允许换行
+                    overflow: 'linebreak' 
                 },
                 columnStyles: {
-                    0: { cellWidth: 35 }, // Code 列宽固定
-                    2: { cellWidth: 35 }  // Price 列宽固定
-                    // Name 列自动适应剩余宽度
+                    0: { cellWidth: 35 }, 
+                    2: { cellWidth: 35 } 
                 }
             });
 
             doc.save(`Products_${new Date().toISOString().slice(0,10)}.pdf`);
         }
-
     </script>
 </body>
 </html>

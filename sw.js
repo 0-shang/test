@@ -1,43 +1,15 @@
-const CACHE_NAME = 'sales-master-v1';
-const urlsToCache = [
-  './',
-  './index.html',
-  './icon.png',
-  './manifest.json'
-];
-
-// 安装 Service Worker
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+// sw.js - 基本的 Service Worker
+self.addEventListener('install', (e) => {
+    console.log('[Service Worker] Install');
+    e.waitUntil(self.skipWaiting());
 });
 
-// 拦截网络请求 (简单的网络优先策略，保证数据最新)
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+self.addEventListener('activate', (e) => {
+    console.log('[Service Worker] Activate');
+    e.waitUntil(self.clients.claim());
 });
 
-// 更新 Service Worker
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+self.addEventListener('fetch', (e) => {
+    // 简单的透传策略，不进行离线缓存拦截，保证数据实时性
+    e.respondWith(fetch(e.request));
 });
