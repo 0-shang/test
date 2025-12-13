@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 8.1</title>
+    <title>Sales Master Pro 8.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -48,10 +48,10 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
         
-        /* 侧边按钮样式 */
+        /* 侧边按钮样式 - 修改为白色 */
         .side-btn {
             transition: all 0.2s;
-            box-shadow: -2px 2px 5px rgba(0,0,0,0.2);
+            box-shadow: -2px 2px 8px rgba(0,0,0,0.15);
         }
         .side-btn:active { transform: scale(0.95); }
 
@@ -61,6 +61,11 @@
         @keyframes fadeOut { to { opacity: 0; transform: translateX(20px); height: 0; padding: 0; margin: 0; } }
         .pull-indicator { height: 0; overflow: hidden; transition: height 0.2s; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #6b7280; font-size: 0.8rem; }
         .pull-indicator.visible { height: 50px; }
+        
+        /* 修复搜索页滚动 */
+        .scroll-container {
+            -webkit-overflow-scrolling: touch; /* iOS 平滑滚动 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
@@ -217,10 +222,15 @@
                     <div id="mainSearchResult" class="mt-6 hidden max-w-2xl mx-auto"></div>
                 </div>
 
-                <!-- Today's Task -->
+                <!-- Today's Task / Add Customer Button -->
                 <div class="max-w-5xl mx-auto mt-8 pb-24">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-gray-800 border-l-4 border-accent pl-3">Today's Task</h3>
+                        <!-- 修改：Customer 按钮改为 Today's Task 点击触发 -->
+                        <button onclick="toggleSidebar()" class="flex items-center space-x-2 group hover:opacity-80 transition">
+                            <h3 class="text-lg font-bold text-gray-800 border-l-4 border-accent pl-3 group-hover:text-primary">Today's Task</h3>
+                            <span class="text-xs bg-primary text-white px-2 py-1 rounded-full"><i class="fa-solid fa-plus mr-1"></i> Add</span>
+                        </button>
+                        
                         <button onclick="shareTaskToGroup()" class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded font-bold shadow flex items-center"><i class="fa-brands fa-whatsapp mr-1"></i> Share Plan</button>
                     </div>
                     <div id="todayTaskList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr"></div>
@@ -232,18 +242,11 @@
                 </div>
             </main>
 
-            <!-- SIDE BUTTONS GROUP (REPLACED Draggable Btn) -->
+            <!-- SIDE BUTTONS - 仅保留 List 按钮，白色样式 -->
             <div class="fixed right-0 top-1/2 transform -translate-y-1/2 z-30 flex flex-col items-end space-y-3">
-                <!-- Customer Button -->
-                <button onclick="toggleSidebar()" class="side-btn bg-white text-primary font-bold py-3 pl-5 pr-4 rounded-l-full flex items-center gap-2 border border-r-0 border-gray-200">
-                    <span class="text-sm">Customer</span>
-                    <i class="fa-solid fa-users"></i>
-                </button>
-                
-                <!-- Product Button (New) -->
-                <button onclick="openProductPage()" class="side-btn bg-accent text-white font-bold py-3 pl-5 pr-4 rounded-l-full flex items-center gap-2 border-none">
-                    <span class="text-sm">Product</span>
-                    <i class="fa-solid fa-box-open"></i>
+                <button onclick="openProductPage()" class="side-btn bg-white text-gray-800 font-bold py-3 pl-5 pr-4 rounded-l-full flex items-center gap-2 border border-r-0 border-gray-300">
+                    <span class="text-sm">List</span>
+                    <i class="fa-solid fa-box-open text-primary"></i>
                 </button>
             </div>
 
@@ -267,15 +270,16 @@
     </div>
 
     <!-- D. 独立产品搜索页面 (Product Search Overlay) -->
-    <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col animate-fade-in">
-        <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center">
-            <h2 class="text-xl font-bold flex items-center"><i class="fa-solid fa-box-open mr-2"></i> Product Search</h2>
+    <!-- 修复：使用 h-screen 和 flex-col 确保滚动区域正确 -->
+    <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col h-screen animate-fade-in">
+        <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center shrink-0">
+            <h2 class="text-xl font-bold flex items-center"><i class="fa-solid fa-box-open mr-2"></i> Product List</h2>
             <button onclick="closeProductPage()" class="text-white hover:text-gray-300 text-2xl"><i class="fa-solid fa-times"></i></button>
         </div>
         
-        <div class="p-4 flex-1 flex flex-col max-w-5xl mx-auto w-full">
+        <div class="p-4 flex flex-col flex-1 overflow-hidden max-w-5xl mx-auto w-full">
             <!-- Search & Export Header -->
-            <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm mb-4 shrink-0">
                 <div class="flex flex-col md:flex-row gap-3">
                     <div class="relative flex-1">
                         <input type="text" id="productSearchInput" placeholder="Search product by Name or Code..." 
@@ -293,8 +297,9 @@
                 </div>
             </div>
 
-            <!-- Results List -->
-            <div id="productResultsContainer" class="flex-1 overflow-y-auto space-y-3 pb-10">
+            <!-- Results List (Scrollable Area) -->
+            <!-- 修复：min-h-0 是 flex 容器内滚动的关键 -->
+            <div id="productResultsContainer" class="flex-1 overflow-y-auto min-h-0 space-y-3 pb-10 scroll-container">
                 <!-- Results injected here -->
                 <div class="text-center text-gray-400 mt-10">
                     <i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i>
@@ -338,8 +343,8 @@
         // --- Globals ---
         let allSalesData = [];
         let myCustomers = [];
-        let allProductData = []; // Store products here
-        let currentProductResults = []; // Store filtered products for PDF
+        let allProductData = []; 
+        let currentProductResults = []; 
         let currentUser = null; 
         let todayTasks = [];
         let globalHistory = []; 
@@ -351,7 +356,7 @@
 
         window.onload = function() {
             loadCSV();
-            loadProductCSV(); // Load products
+            loadProductCSV(); 
             checkSession();
             initPullToRefresh('adminMain', 'adminPullIndicator');
             initPullToRefresh('salesMain', 'salesPullIndicator');
@@ -409,12 +414,10 @@
             });
         }
 
-        // ★★★ New: Load Products CSV ★★★
         function loadProductCSV() {
             Papa.parse("products.csv", {
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
-                    // Expected CSV: code, name, stock, price, promoprice, new
                     allProductData = results.data.map(item => ({
                         code: (item.Code || item.code || "").trim(),
                         name: (item.Name || item.name || "").trim(),
@@ -423,10 +426,9 @@
                         promo: (item.PromoPrice || item.promoprice || "").trim(),
                         isNew: (item.New || item.new || "").trim()
                     }));
-                    console.log(`Loaded ${allProductData.length} products.`);
                 },
                 error: function(err) {
-                    console.warn("Could not load products.csv. Ensure the file exists.", err);
+                    console.warn("Could not load products.csv", err);
                 }
             });
         }
@@ -647,7 +649,7 @@
             closeReportModal();
         }
 
-        // ================= ★★★ NEW PRODUCT SEARCH FUNCTIONS ★★★ =================
+        // ================= ★★★ PRODUCT SEARCH FUNCTIONS ★★★ =================
         function openProductPage() {
             document.getElementById('productSearchPage').classList.remove('hidden');
         }
@@ -668,7 +670,6 @@
             }
 
             const q = val.toLowerCase();
-            // FILTER LOGIC: Match Name OR Code AND Stock > 0
             currentProductResults = allProductData.filter(p => 
                 (p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)) && p.stock > 0
             );
@@ -680,7 +681,6 @@
                 return;
             }
 
-            // Render Results (Card/List style for readability)
             let html = '';
             currentProductResults.forEach(p => {
                 html += `
@@ -698,21 +698,25 @@
             container.innerHTML = html;
         }
 
+        // ★★★ 修复 PDF 导出问题 ★★★
         function exportProductPDF() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Header
             doc.setFontSize(18);
             doc.text("Product Availability List", 14, 20);
             doc.setFontSize(10);
             doc.text(`Generated by: ${currentUser ? currentUser.name : 'Guest'}`, 14, 28);
             doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 33);
 
-            // Table Body
-            const tableData = currentProductResults.map(p => [p.code, p.name, p.price]);
+            // 修复字体问题：将所有内容强制转为String，避免数字格式导致特定代码显示异常
+            const tableData = currentProductResults.map(p => [
+                String(p.code), 
+                String(p.name), 
+                String(p.price)
+            ]);
 
             doc.autoTable({
                 startY: 40,
@@ -720,7 +724,18 @@
                 body: tableData,
                 theme: 'striped',
                 headStyles: { fillColor: [30, 58, 138] }, // Primary color
-                styles: { fontSize: 10, cellPadding: 3 }
+                // 修复分页问题：rowPageBreak: 'avoid' 防止一行内容被拆分到两页
+                rowPageBreak: 'avoid',
+                styles: { 
+                    fontSize: 10, 
+                    cellPadding: 3, 
+                    overflow: 'linebreak' // 允许换行
+                },
+                columnStyles: {
+                    0: { cellWidth: 35 }, // Code 列宽固定
+                    2: { cellWidth: 35 }  // Price 列宽固定
+                    // Name 列自动适应剩余宽度
+                }
             });
 
             doc.save(`Products_${new Date().toISOString().slice(0,10)}.pdf`);
