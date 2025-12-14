@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 9.9.8</title>
+    <title>Sales Master Pro 9.9.9</title>
     
     <!-- ★★★ 图标配置 ★★★ -->
     <script>
@@ -77,6 +77,18 @@
 
         #loginSection { background-color: #1e3a8a; } 
 
+        /* 修复：确保启动页样式正确，并处于最高层级 */
+        #splashScreen {
+            position: fixed; inset: 0; 
+            background-color: #ffffff; 
+            z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        #splashScreen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        
+        .splash-img { width: 60%; max-width: 280px; height: auto; object-fit: contain; }
+
         .login-card {
             background: white; border-radius: 12px; padding: 30px 25px; width: 90%; max-width: 350px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center;
@@ -108,6 +120,12 @@
     </style>
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
+
+    <!-- 1. 启动页 (Splash Screen) -->
+    <div id="splashScreen">
+        <img src="" id="splashLogo" class="splash-img">
+        <script>document.getElementById('splashLogo').src = APP_ICON_HD;</script>
+    </div>
 
     <!-- A. 登录界面 -->
     <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
@@ -378,33 +396,44 @@
         let todayTasks = [];
         let globalHistory = []; 
         let adminTasks = [];
-        let activePdfRequest = null;
-        let currentPdfBlobUrl = null;
+        let adminExportLogs = []; 
         
-        // 3. 动态生成 Rep Directory
         let repDirectory = {};
 
-        window.onload = function() {
+        // ★★★ 核心修复：应用启动时初始化顺序 ★★★
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. 优先处理启动页逻辑
+            const splash = document.getElementById('splashScreen');
+            
+            // 2. 检查登录状态
+            const saved = localStorage.getItem('salesMasterUser');
+            
+            // 2秒后执行界面切换，确保白屏时间被 Logo 覆盖
             setTimeout(() => {
-                const saved = localStorage.getItem('salesMasterUser'); // 2. Using localStorage
+                if (splash) splash.classList.add('hidden'); // 隐藏启动页
+                
                 if(!saved) {
+                    // 无登录 -> 显示登录页
                     document.getElementById('loginSection').classList.remove('hidden');
                 } else {
+                    // 有登录 -> 标记 Body 已加载
                     document.body.classList.add('loaded');
                 }
-            }, 100);
+            }, 2000);
 
+            // 3. 并行加载数据
             loadCSV();
             loadProductCSV(); 
             initDraggableListBtn(); 
-            checkSession();
+            checkSession(); // 恢复会话
+            
+            // 初始化下拉刷新
             initPullToRefresh('adminMain', 'adminPullIndicator');
             initPullToRefresh('salesMain', 'salesPullIndicator');
-        };
+        });
 
         function initDraggableListBtn() { const btn = document.getElementById('draggableListBtn'); let isDragging = false, startY, startTop; const handleStart = (e) => { isDragging = false; const touch = e.touches ? e.touches[0] : e; startY = touch.clientY; startTop = btn.offsetTop; }; const handleMove = (e) => { const touch = e.touches ? e.touches[0] : e; if (Math.abs(touch.clientY - startY) > 5) isDragging = true; if (isDragging) { e.preventDefault(); let newTop = startTop + (touch.clientY - startY); btn.style.top = Math.max(50, Math.min(window.innerHeight - 80, newTop)) + 'px'; } }; btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchmove', handleMove, {passive: false}); btn.addEventListener('click', () => { if (!isDragging) openProductPage(); }); }
         
-        // 2. Persistent Login Check
         function checkSession() { 
             const saved = localStorage.getItem('salesMasterUser'); 
             if(saved) { 
@@ -436,13 +465,11 @@
             } catch (e) { console.error(e); } 
         }
 
-        // 3. Dynamic Rep Directory Construction
         function loadCSV() { 
             Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
                 allSalesData = results.data.map(item => {
                     const rCode = (item.Limit||item.limit||"").trim().toUpperCase();
                     const rName = (item.RepName||item.repname||"Sales").trim();
-                    // Build directory dynamically
                     if(rCode && rName) repDirectory[rCode] = rName;
                     
                     return { 
@@ -485,7 +512,7 @@
 
             if (code.toLowerCase() === 'admin' && pass === '8888') { 
                 currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; 
-                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); // 2. localStorage
+                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
                 await refreshData(); 
                 document.getElementById('loginSection').classList.add('hidden'); 
                 document.getElementById('adminSection').classList.remove('hidden'); 
@@ -515,7 +542,7 @@
             myCustomers = customers; 
             let finalName = repDirectory[code] || customers[0].csvRepName; 
             currentUser = { code: code, name: finalName, isAdmin: false }; 
-            localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); // 2. localStorage
+            localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
             
             await refreshData(); 
             document.getElementById('loginSection').classList.add('hidden'); 
@@ -549,50 +576,14 @@
             adminTasks = []; taskSnap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() }));
             const repSnap = await db.collection('reports').orderBy('timestamp', 'desc').get();
             globalHistory = []; repSnap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() }));
+            const logSnap = await db.collection('export_logs').orderBy('timestamp', 'desc').limit(200).get();
+            adminExportLogs = []; logSnap.forEach(doc => adminExportLogs.push({ docId: doc.id, ...doc.data() }));
         }
-        
-        function switchAdminTab(tab) { 
-            const active = document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`);
-            if (!active.classList.contains('hidden')) return;
-
-            ['assign','history','reports','exports'].forEach(t => { 
-                document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); 
-                document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; 
-            }); 
-            
-            active.classList.remove('hidden'); 
-            document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; 
-            
-            if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } 
-            if(tab === 'exports') { renderAdminRequests(); } 
-        }
-
+        function switchAdminTab(tab) { ['assign','history','reports','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { initAdminLogFilters(); renderAdminExportLogs(); } }
         function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
-        
-        // 1. Export Fix: Export ALL data, but Render only 50
-        function renderAdminReports() { 
-            const dateVal = document.getElementById('adminReportDateFilter').value; 
-            const repVal = document.getElementById('adminReportRepFilter').value; 
-            const textVal = document.getElementById('adminReportTextFilter').value.toLowerCase(); 
-            const tbody = document.getElementById('adminReportTableBody'); 
-            const mobileContainer = document.getElementById('adminReportMobileList'); 
-            tbody.innerHTML = ''; mobileContainer.innerHTML = ''; 
-            
-            const filtered = globalHistory.filter(r => { 
-                let matchDate = true; if (dateVal) { const rDate = new Date(r.date); const filterDate = new Date(dateVal); matchDate = (rDate.toDateString() === filterDate.toDateString()); } 
-                let matchRep = true; if (repVal) matchRep = (r.repCode === repVal); 
-                let matchText = true; if (textVal) matchText = (r.customerName && r.customerName.toLowerCase().includes(textVal)); 
-                return matchDate && matchRep && matchText; 
-            });
-
-            filtered.slice(0, 50).forEach(r => { 
-                const dateStr = new Date(r.date).toLocaleDateString(); const repName = repDirectory[r.repCode] || r.repCode; 
-                tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${dateStr}</td><td class="p-3 font-bold">${repName}</td><td class="p-3">${r.customerName}</td><td class="p-3 text-gray-600">${r.note}</td></tr>`; 
-                mobileContainer.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-gray-500 mb-2"><div class="flex justify-between items-center mb-1"><span class="font-bold text-gray-800">${repName}</span><span class="text-xs text-gray-400">${dateStr}</span></div><div class="text-sm font-bold text-primary mb-1">${r.customerName}</div><div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">${r.note}</div></div>`; 
-            }); 
-        }
-
-        // 1. Fixed Admin Export (All Data)
+        function initAdminLogFilters() { const sel = document.getElementById('adminLogRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
+        function renderAdminReports() { const dateVal = document.getElementById('adminReportDateFilter').value; const repVal = document.getElementById('adminReportRepFilter').value; const textVal = document.getElementById('adminReportTextFilter').value.toLowerCase(); const tbody = document.getElementById('adminReportTableBody'); const mobileContainer = document.getElementById('adminReportMobileList'); tbody.innerHTML = ''; mobileContainer.innerHTML = ''; globalHistory.filter(r => { let matchDate = true; if (dateVal) { const rDate = new Date(r.date); const filterDate = new Date(dateVal); matchDate = (rDate.toDateString() === filterDate.toDateString()); } let matchRep = true; if (repVal) matchRep = (r.repCode === repVal); let matchText = true; if (textVal) matchText = (r.customerName && r.customerName.toLowerCase().includes(textVal)); return matchDate && matchRep && matchText; }).forEach(r => { const dateStr = new Date(r.date).toLocaleDateString(); const repName = repDirectory[r.repCode] || r.repCode; tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${dateStr}</td><td class="p-3 font-bold">${repName}</td><td class="p-3">${r.customerName}</td><td class="p-3 text-gray-600">${r.note}</td></tr>`; mobileContainer.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-gray-500 mb-2"><div class="flex justify-between items-center mb-1"><span class="font-bold text-gray-800">${repName}</span><span class="text-xs text-gray-400">${dateStr}</span></div><div class="text-sm font-bold text-primary mb-1">${r.customerName}</div><div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">${r.note}</div></div>`; }); }
+        function renderAdminExportLogs() { const dateVal = document.getElementById('adminLogDateFilter').value; const repVal = document.getElementById('adminLogRepFilter').value; const list = document.getElementById('adminExportLogList'); list.innerHTML = ''; const filtered = adminExportLogs.filter(log => { let matchDate = true; if (dateVal) { const lDate = log.timestamp ? log.timestamp.toDate() : new Date(); const fDate = new Date(dateVal); matchDate = (lDate.toDateString() === fDate.toDateString()); } let matchRep = true; if (repVal) matchRep = (log.repCode === repVal); return matchDate && matchRep; }); if(filtered.length === 0) { list.innerHTML = '<div class="text-gray-400 text-center p-4">No export records found.</div>'; return; } filtered.forEach(log => { const ts = log.timestamp ? log.timestamp.toDate().toLocaleString() : 'N/A'; list.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-red-500 flex justify-between items-center"><div><div class="font-bold text-gray-800">${log.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div><div class="text-sm text-gray-600">Generated: <span class="font-mono text-xs bg-gray-100 px-1 rounded">${log.fileName}</span></div></div><div class="text-xs font-bold text-gray-400">PDF</div></div>`; }); }
         function adminExportReports() {
             let csv = "Date,Rep,Customer,Note\n";
             const dateVal = document.getElementById('adminReportDateFilter').value;
@@ -637,40 +628,11 @@
         function addAssignRow() { const container = document.getElementById('assignRowsContainer'); const rowId = Date.now() + Math.random(); let repCheckboxes = '<div class="h-24 overflow-y-auto border rounded p-2 bg-white">'; for (const [code, name] of Object.entries(repDirectory)) { repCheckboxes += `<label class="flex items-center space-x-2 mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded"><input type="checkbox" value="${code}" class="assign-rep-checkbox accent-primary"><span class="text-xs text-gray-700 font-bold">${name}</span></label>`; } repCheckboxes += '</div>'; const div = document.createElement('div'); div.className = "assign-row bg-gray-50 p-3 rounded border grid grid-cols-1 md:grid-cols-3 gap-2 relative"; div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow hover:bg-red-600">X</button><div><label class="text-[10px] font-bold text-gray-500">SELECT REPS</label>${repCheckboxes}</div><div><label class="text-[10px] font-bold text-gray-500">CUSTOMER</label><div class="relative"><input type="text" placeholder="Search..." class="w-full p-2 border rounded text-sm" onkeyup="searchAdminCustInRow(this, '${rowId}')"><div id="res-${rowId}" class="absolute z-10 bg-white w-full max-h-40 overflow-auto shadow hidden border"></div><input type="hidden" class="assign-cust-id"><input type="hidden" class="assign-cust-name"></div></div><div><label class="text-[10px] font-bold text-gray-500">INSTRUCTION</label><input type="text" class="assign-note w-full p-2 border rounded text-sm" placeholder="Task details..."></div>`; container.appendChild(div); }
         function searchAdminCustInRow(inp, rowId) { const val = inp.value.toLowerCase(); const box = document.getElementById(`res-${rowId}`); if(val.length<2) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); allSalesData.filter(c => c.name.toLowerCase().includes(val)).slice(0,10).forEach(c => { const d = document.createElement('div'); d.className = "p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText = `${c.name} (${c.id})`; d.onclick = () => { inp.value = c.name; inp.parentElement.querySelector('.assign-cust-id').value = c.id; inp.parentElement.querySelector('.assign-cust-name').value = c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
         async function adminSubmitBulkTasks() { const rows = document.querySelectorAll('.assign-row'); const batch = db.batch(); let count = 0; rows.forEach(row => { const cbs = row.querySelectorAll('.assign-rep-checkbox:checked'); const cid = row.querySelector('.assign-cust-id').value; const cnm = row.querySelector('.assign-cust-name').value; const nt = row.querySelector('.assign-note').value; if(cbs.length && cid && nt) { cbs.forEach(cb => { const ref = db.collection('admin_tasks').doc(); batch.set(ref, { repCode: cb.value, repName: repDirectory[cb.value], customerId: cid, customerName: cnm, taskDetail: nt, status: 'pending', assignedDate: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }); count++; }); } }); if(count>0) { await batch.commit(); alert('Tasks Assigned'); document.getElementById('assignRowsContainer').innerHTML = ''; addAssignRow(); } }
-        
-        function renderAdminTasks() { 
-            const f = document.getElementById('adminTaskFilter').value.toLowerCase(); 
-            const container = document.getElementById('adminTaskList');
-            container.innerHTML = '';
-            
-            const filtered = adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f));
-            
-            filtered.slice(0, 50).forEach(t => {
-                const isDone = t.status === 'completed';
-                const statusColor = isDone ? 'text-green-600' : 'text-orange-500';
-                
-                const div = document.createElement('div');
-                div.className = `p-3 rounded border flex justify-between items-center ${isDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`;
-                div.innerHTML = `
-                    <div>
-                        <div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div>
-                        <div class="text-xs text-gray-500 mt-1">${t.assignedDate} | ${t.taskDetail}</div>
-                        <div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div>
-                    </div>
-                    <div>
-                        ${isDone ? `<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs underline font-bold">Undo</button>` : `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>`}
-                    </div>`;
-                container.appendChild(div);
-            });
-        }
-        async function adminRestoreTask(id) { if(confirm('Undo this task?')) await db.collection('admin_tasks').doc(id).update({status: 'pending'}); refreshData(); }
-        async function adminDeleteTask(id) { if(confirm('Delete task permanently?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
-        
-        // 1. Fixed Admin Export (Tasks)
+        function renderAdminTasks() { const f = document.getElementById('adminTaskFilter').value.toLowerCase(); document.getElementById('adminTaskList').innerHTML = adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f)).map(t => `<div class="p-3 rounded border flex justify-between items-center ${t.status==='completed'?'bg-green-50':'bg-white'}"><div><div class="font-bold text-gray-800">${t.repName} -> ${t.customerName}</div><div class="text-xs text-gray-500">${t.assignedDate} | ${t.taskDetail}</div></div>${t.status==='completed'?'':`<button onclick="adminRestoreTask('${t.docId}')" class="text-red-500 text-xs">Delete</button>`}</div>`).join(''); }
+        async function adminRestoreTask(id) { if(confirm('Delete?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
         function adminExportTasks() {
             let csv = "AssignedDate,Rep,Customer,Detail,Status\n";
             const f = document.getElementById('adminTaskFilter').value.toLowerCase(); 
-            // Export ALL matching
             adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f)).forEach(t => {
                 csv += `${t.assignedDate},${t.repName},${t.customerName},"${t.taskDetail}",${t.status}\n`;
             });
