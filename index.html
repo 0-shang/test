@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 9.6</title>
+    <title>Sales Master Pro 9.7</title>
     
-    <!-- ★★★ 1. 图标配置 (使用您提供的文件名) ★★★ -->
+    <!-- ★★★ 图标配置 ★★★ -->
     <script>
-        // APP内部通用小图标使用 192
-        const APP_ICON_SMALL = "icon-192.png";
-        // 启动页大图标使用 512
-        const APP_ICON_LARGE = "icon-512.png";
+        const APP_ICON_SMALL = "icon-192.png"; // 应用内小图标
+        const APP_ICON_LARGE = "icon-512.png"; // 启动页高清大图标
     </script>
 
     <!-- PWA Settings -->
-    <meta name="theme-color" content="#ffffff"> <!-- 启动栏改为白色 -->
+    <meta name="theme-color" content="#1e3a8a"> <!-- 状态栏颜色与背景一致 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Sales Master">
@@ -56,14 +54,13 @@
             }
         }
 
-        // ★★★ PWA Manifest 自动读取 icon-192.png 和 icon-512.png ★★★
         const manifest = {
             "name": "Sales Master Pro",
             "short_name": "SalesMaster",
             "start_url": ".",
             "display": "standalone",
-            "background_color": "#ffffff",
-            "theme_color": "#ffffff",
+            "background_color": "#1e3a8a",
+            "theme_color": "#1e3a8a",
             "orientation": "portrait",
             "icons": [
                 { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
@@ -77,37 +74,43 @@
     </script>
     
     <style>
-        /* 2. 启动页纯白设计 */
-        body { background-color: #ffffff; overflow: hidden; } 
-        body.loaded { background-color: #f3f4f6; }
+        /* 全局背景色 - 纯蓝 */
+        body { background-color: #1e3a8a; overflow: hidden; } 
+        body.loaded { background-color: #f3f4f6; } /* 登录后变为浅灰 */
 
-        /* Splash Screen - Pure White Style */
+        /* 1. 全新高清启动页 (Pure Blue + High Res Logo) */
         #splashScreen {
-            position: fixed; inset: 0; background: #ffffff; z-index: 10000;
+            position: fixed; inset: 0; 
+            background-color: #1e3a8a; /* 纯蓝背景 */
+            z-index: 10000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.6s ease-out, visibility 0.6s;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
         }
         #splashScreen.hidden { opacity: 0; visibility: hidden; }
         
-        /* Logo Animation */
-        .splash-logo { 
-            width: 140px; height: 140px; 
-            border-radius: 28px; /* App icon style rounded corners */
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
-            animation: fadeInScale 1s ease-out;
+        /* 呼吸动画的 Logo */
+        .splash-logo-img { 
+            width: 160px; height: 160px; 
+            border-radius: 32px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: pulseLogo 2s infinite ease-in-out;
         }
-        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulseLogo { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* Login Card */
+        /* 2. 登录卡片设计 */
         .login-card {
-            background: rgba(255, 255, 255, 0.98); 
-            border-radius: 24px; padding: 40px 30px; width: 85%; max-width: 360px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
-            transform: translateY(20px); opacity: 0;
-            animation: slideUp 0.6s ease-out forwards; animation-delay: 0.5s;
+            background: white;
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 85%; max-width: 340px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            /* 初始状态用于动画 */
+            opacity: 0; transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out forwards;
         }
-        @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
 
+        /* 侧边栏与滚动条 */
         .sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-closed { transform: translateX(100%); }
         .sidebar-open { transform: translateX(0); }
@@ -125,39 +128,46 @@
         .badge-new { background-color: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
     </style>
 </head>
-<body class="text-gray-800 font-sans h-screen flex flex-col">
+<body class="font-sans h-screen flex flex-col text-gray-800">
 
-    <!-- 4. 纯白启动页 (Splash Screen) -->
+    <!-- 4. 启动页 (Splash Screen) -->
     <div id="splashScreen">
-        <img src="" id="splashLogo" class="splash-logo mb-8">
+        <!-- 使用 APP_ICON_LARGE (512px) 解决模糊问题 -->
+        <img src="" id="splashLogo" class="splash-logo-img mb-8">
         <script>document.getElementById('splashLogo').src = APP_ICON_LARGE;</script>
         
-        <!-- 品牌色文字，在白色背景上显示 -->
-        <h1 class="text-primary text-3xl font-extrabold tracking-wider">SALES MASTER</h1>
-        <div class="h-1 w-12 bg-accent mt-4 mb-4 rounded-full"></div>
-        <p class="text-gray-400 text-sm tracking-widest font-medium">PRO EDITION 9.6</p>
+        <div class="flex space-x-2 mt-4">
+            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0s"></div>
+            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+        </div>
     </div>
 
-    <!-- A. 登录界面 -->
-    <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <!-- A. 登录界面 (纯蓝背景 + 白色卡片) -->
+    <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden bg-[#1e3a8a]">
         <div class="login-card text-center">
-            <img src="" id="loginLogo" class="w-20 h-20 mx-auto mb-6 rounded-2xl shadow-md">
+            <!-- 登录框 Logo -->
+            <img src="" id="loginLogo" class="w-20 h-20 mx-auto mb-5 rounded-2xl shadow-sm">
             <script>document.getElementById('loginLogo').src = APP_ICON_SMALL;</script>
-            <div id="loginStatus" class="hidden text-xs bg-red-100 text-red-600 p-2 rounded mb-4"></div>
-            <div class="space-y-5 text-left">
+            
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Welcome Back</h2>
+
+            <div id="loginStatus" class="hidden text-xs bg-red-50 text-red-600 p-2 rounded mb-4 border border-red-100"></div>
+            
+            <div class="space-y-4 text-left">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Rep Code</label>
-                    <input type="text" id="loginRepCode" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none transition" placeholder="Enter ID">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Rep Code</label>
+                    <input type="text" id="loginRepCode" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition" placeholder="Enter ID">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Password</label>
-                    <input type="password" id="loginPassword" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none transition" placeholder="••••">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition" placeholder="••••">
                 </div>
-                <button onclick="performLogin()" class="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 active:scale-95 transition transform">
+                <button onclick="performLogin()" class="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 active:scale-95 transition transform mt-2">
                     LOGIN
                 </button>
             </div>
-            <p class="text-gray-400 text-[10px] mt-6">Authorized Personnel Only</p>
+            <p class="text-gray-300 text-[10px] mt-8">Sales Master Pro v9.7</p>
         </div>
     </div>
 
@@ -420,11 +430,14 @@
             setTimeout(() => {
                 const splash = document.getElementById('splashScreen');
                 splash.classList.add('hidden');
-                document.body.classList.add('loaded'); 
                 
                 const saved = sessionStorage.getItem('salesMasterUser');
-                if(!saved) document.getElementById('loginSection').classList.remove('hidden');
-            }, 2500);
+                if(!saved) {
+                    document.getElementById('loginSection').classList.remove('hidden');
+                } else {
+                    document.body.classList.add('loaded'); // 如果已登录，直接变灰
+                }
+            }, 2000); // 2秒启动页
 
             loadCSV();
             loadProductCSV(); 
@@ -459,7 +472,6 @@
 
         function loadCSV() { Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { allSalesData = results.data.map(item => ({ id: (item.Code||item.code||"").trim(), name: (item.Name||item.name||"Unknown").trim(), csvRepName: (item.RepName||item.repname||"Sales").trim(), repCode: (item.Limit||item.limit||"").trim().toUpperCase(), phone: (item.Phone||item.phone||"").trim(), credit: (item.Credit||item.credit||"0").trim() })); } }); }
         
-        // ★★★ 1. Product CSV Load (With Promo Price & New/Old) ★★★
         function loadProductCSV() { 
             Papa.parse("products.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
                 allProductData = results.data.map(item => ({ 
@@ -467,13 +479,13 @@
                     name: (item.Name||item.name||"").trim(), 
                     stock: parseFloat(item.Stock||item.stock||"0"), 
                     price: (item.Price||item.price||"0").trim(),
-                    promo: (item.PromoPrice||item.promoprice||"").trim(), // New Promo Column
+                    promo: (item.PromoPrice||item.promoprice||"").trim(), 
                     isNew: (item.New||item.new||"0").trim() 
                 })); 
             }}); 
         }
 
-        async function performLogin() { const code = document.getElementById('loginRepCode').value.trim(); const pass = document.getElementById('loginPassword').value.trim(); const status = document.getElementById('loginStatus'); if (code.toLowerCase() === 'admin' && pass === '8888') { currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('adminSection').classList.remove('hidden'); addAssignRow(); initAdminReportFilters(); return; } if (pass !== '0000') { status.innerText = "Wrong Password"; status.classList.remove('hidden'); return; } const customers = allSalesData.filter(c => c.repCode == code); if (customers.length === 0) { if(document.activeElement.id === 'loginRepCode') { status.innerText = "Code not found"; status.classList.remove('hidden'); } return; } myCustomers = customers; let finalName = repDirectory[code] || customers[0].csvRepName; currentUser = { code: code, name: finalName, isAdmin: false }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; listenForPdfStatus(); }
+        async function performLogin() { const code = document.getElementById('loginRepCode').value.trim(); const pass = document.getElementById('loginPassword').value.trim(); const status = document.getElementById('loginStatus'); if (code.toLowerCase() === 'admin' && pass === '8888') { currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('adminSection').classList.remove('hidden'); document.body.classList.add('loaded'); addAssignRow(); initAdminReportFilters(); return; } if (pass !== '0000') { status.innerText = "Wrong Password"; status.classList.remove('hidden'); return; } const customers = allSalesData.filter(c => c.repCode == code); if (customers.length === 0) { if(document.activeElement.id === 'loginRepCode') { status.innerText = "Code not found"; status.classList.remove('hidden'); } return; } myCustomers = customers; let finalName = repDirectory[code] || customers[0].csvRepName; currentUser = { code: code, name: finalName, isAdmin: false }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); document.body.classList.add('loaded'); document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; listenForPdfStatus(); }
         function logout() { sessionStorage.removeItem('salesMasterUser'); location.reload(); }
 
         // ================= ADMIN FUNCTIONS =================
@@ -538,9 +550,9 @@
         function renderAcceptTasks() { document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `<div class="bg-white p-4 rounded shadow mb-2 flex justify-between"><div><div class="font-bold">${t.customerName}</div><div class="text-xs">${t.taskDetail}</div></div><button onclick="addTaskToToday('${t.docId}','${t.customerId}')" class="bg-primary text-white px-3 rounded">Add</button></div>`).join(''); document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); }
         function addTaskToToday(did, cid) { addToTask(cid); db.collection('admin_tasks').doc(did).update({status: 'completed'}); }
         async function completeAssignedTask(docId) { if(!confirm("Mark completed?")) return; await db.collection('admin_tasks').doc(docId).update({ status: 'completed', completedDate: new Date().toISOString() }); const el = document.getElementById(`accept-${docId}`); el.classList.add('task-fade-out'); setTimeout(() => { adminTasks = adminTasks.filter(t => t.docId !== docId); renderAcceptTasks(); updateAssignedBadge(); }, 500); }
-        async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if(d.exists && d.data().date === new Date().toLocaleDateString()) todayTasks = d.data().tasks || []; }
-        async function saveTasksToCloud() { if(!currentUser.isAdmin) await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
-        async function loadHistoryFromCloud() { const s = await db.collection('reports').where('repCode', '==', currentUser.code).get(); globalHistory = []; s.forEach(d => globalHistory.push({ docId: d.id, ...d.data() })); }
+        async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if (d.exists && d.data().date === new Date().toLocaleDateString()) { todayTasks = d.data().tasks || []; } else { todayTasks = []; } }
+        async function saveTasksToCloud() { if(!currentUser || currentUser.isAdmin) return; await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
+        async function loadHistoryFromCloud() { const snap = await db.collection('reports').where('repCode', '==', currentUser.code).get(); globalHistory = []; snap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() })); }
         
         function handleMainSearch(query) {
             const container = document.getElementById('mainSearchResult'); if (query.length < 2) { container.classList.add('hidden'); return; }
@@ -599,9 +611,8 @@
             document.getElementById('productCountBadge').innerText = `${currentProductResults.length} found`;
             checkExistingRequest(val);
 
-            // ★★★ 1. Render List with Promo Price & New Badge ★★★
+            // 1. Promo Price Logic Implementation
             container.innerHTML = currentProductResults.length === 0 ? `<div class="text-center text-gray-400 mt-10"><p>No results.</p></div>` : currentProductResults.map(p => {
-                // Price Display Logic
                 let priceHtml = `<div class="text-xl font-bold text-primary">${p.price}</div>`;
                 if (p.promo && p.promo !== "0" && p.promo !== "") {
                     priceHtml = `
@@ -691,15 +702,14 @@
 
             const isFullNewSearch = (query.toLowerCase() === 'new');
             
-            // ★★★ 1. PDF Data mapping (Use Promo Price if available) ★★★
+            // ★★★ 1. PDF Data mapping (Use Promo Price) ★★★
             const tableData = currentProductResults.map(p => {
                 let pName = p.name;
                 if (!isFullNewSearch && p.isNew === '1') { pName += " (New Arrivals)"; }
                 
-                // Determine which price to show in PDF
                 let displayPrice = p.price;
                 if (p.promo && p.promo !== "0" && p.promo !== "") {
-                    displayPrice = p.promo; // Use promo price in PDF column
+                    displayPrice = p.promo; 
                 }
 
                 return [String(p.code), String(pName), String(displayPrice)];
