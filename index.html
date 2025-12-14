@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 9.9.5</title>
+    <title>Sales Master Pro 9.9.8</title>
     
     <!-- ★★★ 图标配置 ★★★ -->
     <script>
-        // 1. 全部强制使用高清图，确保系统启动画面清晰
         const APP_ICON_HD = "icon-512.png"; 
     </script>
 
     <!-- PWA Settings -->
-    <meta name="theme-color" content="#1e3a8a"> <!-- 状态栏蓝色 -->
+    <meta name="theme-color" content="#1e3a8a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Sales Master">
@@ -73,11 +72,10 @@
     </script>
     
     <style>
-        body { background-color: #1e3a8a; overflow: hidden; } /* 初始蓝色背景，防止白屏闪烁 */
+        body { background-color: #1e3a8a; overflow: hidden; } 
         body.loaded { background-color: #f3f4f6; } 
 
-        /* 3. 登录界面调整 */
-        #loginSection { background-color: #1e3a8a; } /* 确保背景纯蓝 */
+        #loginSection { background-color: #1e3a8a; } 
 
         .login-card {
             background: white; border-radius: 12px; padding: 30px 25px; width: 90%; max-width: 350px;
@@ -111,8 +109,6 @@
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
 
-    <!-- 1. 已移除 HTML 启动页 (splashScreen)，解决重复 Logo 问题 -->
-
     <!-- A. 登录界面 -->
     <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="login-card">
@@ -137,7 +133,6 @@
 
     <!-- B. 管理员界面 -->
     <div id="adminSection" class="flex flex-col h-full hidden bg-gray-100">
-        <!-- 2. 管理员顶部背景换成蓝色 (bg-primary / #1e3a8a) -->
         <header class="bg-primary text-white shadow-md z-20">
             <div class="container mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center space-x-3">
@@ -172,7 +167,6 @@
                 </div>
             </div>
 
-            <!-- 4. 优化后的 Admin Tasks 界面 (恢复 Completd/Pending 和 Undo 按钮) -->
             <div id="adminTabHistory" class="max-w-5xl mx-auto hidden space-y-4">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-2">
                     <input type="text" id="adminTaskFilter" placeholder="Filter tasks..." class="p-2 border rounded w-full md:w-1/3" onkeyup="renderAdminTasks()">
@@ -386,20 +380,19 @@
         let adminTasks = [];
         let activePdfRequest = null;
         let currentPdfBlobUrl = null;
-
-        const repDirectory = {
-            "10543": "Beny", "10882": "Prince", "10989": "Abigail", "11006": "Hilda", "11029": "Linda"
-        };
+        
+        // 3. 动态生成 Rep Directory
+        let repDirectory = {};
 
         window.onload = function() {
             setTimeout(() => {
-                const saved = sessionStorage.getItem('salesMasterUser');
+                const saved = localStorage.getItem('salesMasterUser'); // 2. Using localStorage
                 if(!saved) {
                     document.getElementById('loginSection').classList.remove('hidden');
                 } else {
                     document.body.classList.add('loaded');
                 }
-            }, 100); // 1. Instant check to avoid wait
+            }, 100);
 
             loadCSV();
             loadProductCSV(); 
@@ -411,8 +404,9 @@
 
         function initDraggableListBtn() { const btn = document.getElementById('draggableListBtn'); let isDragging = false, startY, startTop; const handleStart = (e) => { isDragging = false; const touch = e.touches ? e.touches[0] : e; startY = touch.clientY; startTop = btn.offsetTop; }; const handleMove = (e) => { const touch = e.touches ? e.touches[0] : e; if (Math.abs(touch.clientY - startY) > 5) isDragging = true; if (isDragging) { e.preventDefault(); let newTop = startTop + (touch.clientY - startY); btn.style.top = Math.max(50, Math.min(window.innerHeight - 80, newTop)) + 'px'; } }; btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchmove', handleMove, {passive: false}); btn.addEventListener('click', () => { if (!isDragging) openProductPage(); }); }
         
+        // 2. Persistent Login Check
         function checkSession() { 
-            const saved = sessionStorage.getItem('salesMasterUser'); 
+            const saved = localStorage.getItem('salesMasterUser'); 
             if(saved) { 
                 const user = JSON.parse(saved); 
                 document.getElementById('loginRepCode').value = user.code === 'admin' ? 'admin' : user.code; 
@@ -442,7 +436,26 @@
             } catch (e) { console.error(e); } 
         }
 
-        function loadCSV() { Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { allSalesData = results.data.map(item => ({ id: (item.Code||item.code||"").trim(), name: (item.Name||item.name||"Unknown").trim(), csvRepName: (item.RepName||item.repname||"Sales").trim(), repCode: (item.Limit||item.limit||"").trim().toUpperCase(), phone: (item.Phone||item.phone||"").trim(), credit: (item.Credit||item.credit||"0").trim() })); } }); }
+        // 3. Dynamic Rep Directory Construction
+        function loadCSV() { 
+            Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
+                allSalesData = results.data.map(item => {
+                    const rCode = (item.Limit||item.limit||"").trim().toUpperCase();
+                    const rName = (item.RepName||item.repname||"Sales").trim();
+                    // Build directory dynamically
+                    if(rCode && rName) repDirectory[rCode] = rName;
+                    
+                    return { 
+                        id: (item.Code||item.code||"").trim(), 
+                        name: (item.Name||item.name||"Unknown").trim(), 
+                        csvRepName: rName, 
+                        repCode: rCode, 
+                        phone: (item.Phone||item.phone||"").trim(), 
+                        credit: (item.Credit||item.credit||"0").trim() 
+                    };
+                }); 
+            }}); 
+        }
         
         function loadProductCSV() { 
             Papa.parse("products.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
@@ -457,7 +470,6 @@
             }}); 
         }
 
-        // 2. Optimized Login (Eliminate Lag)
         async function performLogin(silent = false) { 
             const code = document.getElementById('loginRepCode').value.trim(); 
             const pass = document.getElementById('loginPassword').value.trim(); 
@@ -469,11 +481,11 @@
                 btn.classList.add('btn-loading');
             }
 
-            if (!silent) await new Promise(r => setTimeout(r, 50)); // Tiny yield for UI render
+            if (!silent) await new Promise(r => setTimeout(r, 50));
 
             if (code.toLowerCase() === 'admin' && pass === '8888') { 
                 currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; 
-                sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
+                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); // 2. localStorage
                 await refreshData(); 
                 document.getElementById('loginSection').classList.add('hidden'); 
                 document.getElementById('adminSection').classList.remove('hidden'); 
@@ -503,7 +515,7 @@
             myCustomers = customers; 
             let finalName = repDirectory[code] || customers[0].csvRepName; 
             currentUser = { code: code, name: finalName, isAdmin: false }; 
-            sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
+            localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); // 2. localStorage
             
             await refreshData(); 
             document.getElementById('loginSection').classList.add('hidden'); 
@@ -520,9 +532,8 @@
             btn.classList.remove('btn-loading');
         }
         
-        // 2. Instant Logout (No reload)
         function logout() { 
-            sessionStorage.removeItem('salesMasterUser'); 
+            localStorage.removeItem('salesMasterUser'); 
             currentUser = null;
             document.getElementById('appSection').classList.add('hidden');
             document.getElementById('adminSection').classList.add('hidden');
@@ -540,10 +551,9 @@
             globalHistory = []; repSnap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() }));
         }
         
-        // 3. Optimized Tab Switch (Check duplicates)
         function switchAdminTab(tab) { 
             const active = document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`);
-            if (!active.classList.contains('hidden')) return; // Already active
+            if (!active.classList.contains('hidden')) return;
 
             ['assign','history','reports','exports'].forEach(t => { 
                 document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); 
@@ -559,7 +569,7 @@
 
         function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
         
-        // 3. Optimize Render (Limit 50)
+        // 1. Export Fix: Export ALL data, but Render only 50
         function renderAdminReports() { 
             const dateVal = document.getElementById('adminReportDateFilter').value; 
             const repVal = document.getElementById('adminReportRepFilter').value; 
@@ -575,17 +585,40 @@
                 return matchDate && matchRep && matchText; 
             });
 
-            filtered.slice(0, 50).forEach(r => { // Limit for speed
+            filtered.slice(0, 50).forEach(r => { 
                 const dateStr = new Date(r.date).toLocaleDateString(); const repName = repDirectory[r.repCode] || r.repCode; 
                 tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${dateStr}</td><td class="p-3 font-bold">${repName}</td><td class="p-3">${r.customerName}</td><td class="p-3 text-gray-600">${r.note}</td></tr>`; 
                 mobileContainer.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-gray-500 mb-2"><div class="flex justify-between items-center mb-1"><span class="font-bold text-gray-800">${repName}</span><span class="text-xs text-gray-400">${dateStr}</span></div><div class="text-sm font-bold text-primary mb-1">${r.customerName}</div><div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">${r.note}</div></div>`; 
             }); 
         }
+
+        // 1. Fixed Admin Export (All Data)
+        function adminExportReports() {
+            let csv = "Date,Rep,Customer,Note\n";
+            const dateVal = document.getElementById('adminReportDateFilter').value;
+            const repVal = document.getElementById('adminReportRepFilter').value;
+            const textVal = document.getElementById('adminReportTextFilter').value.toLowerCase();
+
+            const filteredForExport = globalHistory.filter(r => {
+                let matchDate = true;
+                if (dateVal) {
+                    const rDate = new Date(r.date);
+                    const filterDate = new Date(dateVal);
+                    matchDate = (rDate.toDateString() === filterDate.toDateString());
+                }
+                let matchRep = true; if (repVal) matchRep = (r.repCode === repVal);
+                let matchText = true; if (textVal) matchText = (r.customerName && r.customerName.toLowerCase().includes(textVal));
+                return matchDate && matchRep && matchText;
+            });
+
+            filteredForExport.forEach(r => csv += `${new Date(r.date).toLocaleDateString()},${repDirectory[r.repCode] || r.repCode},${r.customerName},"${r.note}"\n`);
+            const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `Reports_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click();
+        }
         
         async function renderAdminRequests() {
             const list = document.getElementById('adminRequestList');
             list.innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
-            const snap = await db.collection('pdf_requests').where('status', '==', 'pending').orderBy('timestamp', 'desc').limit(50).get(); // Limit
+            const snap = await db.collection('pdf_requests').where('status', '==', 'pending').orderBy('timestamp', 'desc').limit(50).get(); 
             list.innerHTML = '';
             if (snap.empty) { list.innerHTML = '<div class="text-gray-400 text-center p-4">No pending requests.</div>'; return; }
             snap.forEach(doc => {
@@ -605,7 +638,6 @@
         function searchAdminCustInRow(inp, rowId) { const val = inp.value.toLowerCase(); const box = document.getElementById(`res-${rowId}`); if(val.length<2) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); allSalesData.filter(c => c.name.toLowerCase().includes(val)).slice(0,10).forEach(c => { const d = document.createElement('div'); d.className = "p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText = `${c.name} (${c.id})`; d.onclick = () => { inp.value = c.name; inp.parentElement.querySelector('.assign-cust-id').value = c.id; inp.parentElement.querySelector('.assign-cust-name').value = c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
         async function adminSubmitBulkTasks() { const rows = document.querySelectorAll('.assign-row'); const batch = db.batch(); let count = 0; rows.forEach(row => { const cbs = row.querySelectorAll('.assign-rep-checkbox:checked'); const cid = row.querySelector('.assign-cust-id').value; const cnm = row.querySelector('.assign-cust-name').value; const nt = row.querySelector('.assign-note').value; if(cbs.length && cid && nt) { cbs.forEach(cb => { const ref = db.collection('admin_tasks').doc(); batch.set(ref, { repCode: cb.value, repName: repDirectory[cb.value], customerId: cid, customerName: cnm, taskDetail: nt, status: 'pending', assignedDate: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }); count++; }); } }); if(count>0) { await batch.commit(); alert('Tasks Assigned'); document.getElementById('assignRowsContainer').innerHTML = ''; addAssignRow(); } }
         
-        // 4. Admin Tasks: Restored Status & Undo Button & Optimized
         function renderAdminTasks() { 
             const f = document.getElementById('adminTaskFilter').value.toLowerCase(); 
             const container = document.getElementById('adminTaskList');
@@ -613,7 +645,6 @@
             
             const filtered = adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f));
             
-            // Limit render to 50 for performance
             filtered.slice(0, 50).forEach(t => {
                 const isDone = t.status === 'completed';
                 const statusColor = isDone ? 'text-green-600' : 'text-orange-500';
@@ -634,7 +665,17 @@
         }
         async function adminRestoreTask(id) { if(confirm('Undo this task?')) await db.collection('admin_tasks').doc(id).update({status: 'pending'}); refreshData(); }
         async function adminDeleteTask(id) { if(confirm('Delete task permanently?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
-        function adminExportTasks() { /* Standard CSV */ }
+        
+        // 1. Fixed Admin Export (Tasks)
+        function adminExportTasks() {
+            let csv = "AssignedDate,Rep,Customer,Detail,Status\n";
+            const f = document.getElementById('adminTaskFilter').value.toLowerCase(); 
+            // Export ALL matching
+            adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f)).forEach(t => {
+                csv += `${t.assignedDate},${t.repName},${t.customerName},"${t.taskDetail}",${t.status}\n`;
+            });
+            const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `Tasks_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click();
+        }
 
         // ================= SALES REP FUNCTIONS =================
         function getCustomerStats(custId) {
@@ -658,28 +699,8 @@
         function filterSidebarList(val) { applySidebarFilter(); }
         async function loadAssignedTasksForRep() { const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', '==', 'pending').get(); adminTasks = []; snap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() })); }
         function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
-        
-        // 4. Restored + and Check buttons
-        function renderAcceptTasks() { 
-            const container = document.getElementById('acceptTaskList'); const noMsg = document.getElementById('noAssignedTasksMsg'); container.innerHTML = '';
-            if (adminTasks.length === 0) { noMsg.classList.remove('hidden'); return; } noMsg.classList.add('hidden');
-            adminTasks.forEach(t => { 
-                const div = document.createElement('div'); div.id = `accept-${t.docId}`; div.className = "bg-white p-4 rounded shadow border-l-4 border-primary flex justify-between items-center animate-fade-in"; 
-                div.innerHTML = `
-                    <div>
-                        <div class="font-bold text-gray-800">${t.customerName} <span class="text-xs bg-gray-200 px-1 rounded">${t.customerId}</span></div>
-                        <div class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-user-tag mr-1"></i> ${t.taskDetail}</div>
-                    </div>
-                    <div class="flex space-x-3">
-                        <button onclick="addTaskToToday('${t.docId}', '${t.customerId}')" class="bg-gray-100 w-10 h-10 rounded-full hover:bg-green-200 text-green-600 shadow flex items-center justify-center" title="Add to Today"><i class="fa-solid fa-plus"></i></button>
-                        <button onclick="completeAssignedTask('${t.docId}')" class="bg-primary w-10 h-10 rounded-full hover:bg-blue-800 text-white shadow flex items-center justify-center" title="Mark Done"><i class="fa-solid fa-check"></i></button>
-                    </div>`; 
-                container.appendChild(div); 
-            }); 
-            document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); 
-        }
-        
-        function addTaskToToday(did, cid) { addToTask(cid); const btn = document.querySelector(`#accept-${did} button`); if(btn) btn.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>'; }
+        function renderAcceptTasks() { document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `<div class="bg-white p-4 rounded shadow mb-2 flex justify-between"><div><div class="font-bold">${t.customerName}</div><div class="text-xs">${t.taskDetail}</div></div><button onclick="addTaskToToday('${t.docId}','${t.customerId}')" class="bg-primary text-white px-3 rounded">Add</button></div>`).join(''); document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); }
+        function addTaskToToday(did, cid) { addToTask(cid); db.collection('admin_tasks').doc(did).update({status: 'completed'}); }
         async function completeAssignedTask(docId) { if(!confirm("Mark completed?")) return; await db.collection('admin_tasks').doc(docId).update({ status: 'completed', completedDate: new Date().toISOString() }); const el = document.getElementById(`accept-${docId}`); el.classList.add('task-fade-out'); setTimeout(() => { adminTasks = adminTasks.filter(t => t.docId !== docId); renderAcceptTasks(); updateAssignedBadge(); }, 500); }
         async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if (d.exists && d.data().date === new Date().toLocaleDateString()) { todayTasks = d.data().tasks || []; } else { todayTasks = []; } }
         async function saveTasksToCloud() { if(!currentUser.isAdmin) await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
