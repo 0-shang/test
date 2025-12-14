@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 9.7</title>
+    <title>Sales Master Pro 9.8</title>
     
     <!-- ★★★ 图标配置 ★★★ -->
     <script>
-        const APP_ICON_SMALL = "icon-192.png"; // 应用内小图标
-        const APP_ICON_LARGE = "icon-512.png"; // 启动页高清大图标
+        // 请确保 icon-512.png 就是那个 Frotise 的高清 Logo
+        const APP_ICON_SMALL = "icon-192.png"; 
+        const APP_ICON_LARGE = "icon-512.png"; 
     </script>
 
     <!-- PWA Settings -->
-    <meta name="theme-color" content="#1e3a8a"> <!-- 状态栏颜色与背景一致 -->
+    <meta name="theme-color" content="#ffffff"> <!-- 启动背景设为白色 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Sales Master">
     
     <script>
-        const iconLink = document.createElement('link'); iconLink.rel = 'apple-touch-icon'; iconLink.href = APP_ICON_SMALL; document.head.appendChild(iconLink);
-        const favLink = document.createElement('link'); favLink.rel = 'icon'; favLink.href = APP_ICON_SMALL; document.head.appendChild(favLink);
+        const iconLink = document.createElement('link'); iconLink.rel = 'apple-touch-icon'; iconLink.href = APP_ICON_LARGE; document.head.appendChild(iconLink);
+        const favLink = document.createElement('link'); favLink.rel = 'icon'; favLink.href = APP_ICON_LARGE; document.head.appendChild(favLink);
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -59,8 +60,8 @@
             "short_name": "SalesMaster",
             "start_url": ".",
             "display": "standalone",
-            "background_color": "#1e3a8a",
-            "theme_color": "#1e3a8a",
+            "background_color": "#ffffff",
+            "theme_color": "#ffffff",
             "orientation": "portrait",
             "icons": [
                 { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
@@ -74,43 +75,57 @@
     </script>
     
     <style>
-        /* 全局背景色 - 纯蓝 */
-        body { background-color: #1e3a8a; overflow: hidden; } 
-        body.loaded { background-color: #f3f4f6; } /* 登录后变为浅灰 */
+        /* 页面基础设置 */
+        body { background-color: #f3f4f6; overflow: hidden; } 
 
-        /* 1. 全新高清启动页 (Pure Blue + High Res Logo) */
+        /* 1. 启动页 (Splash Screen) - 纯白背景 + 居中 Logo */
         #splashScreen {
             position: fixed; inset: 0; 
-            background-color: #1e3a8a; /* 纯蓝背景 */
+            background-color: #ffffff; 
             z-index: 10000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             transition: opacity 0.5s ease-out, visibility 0.5s;
         }
         #splashScreen.hidden { opacity: 0; visibility: hidden; }
         
-        /* 呼吸动画的 Logo */
-        .splash-logo-img { 
-            width: 160px; height: 160px; 
-            border-radius: 32px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            animation: pulseLogo 2s infinite ease-in-out;
+        /* Frotise Logo 样式 */
+        .splash-img { 
+            width: 60%; 
+            max-width: 280px; 
+            height: auto; 
+            object-fit: contain;
         }
-        @keyframes pulseLogo { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* 2. 登录卡片设计 */
+        /* 2. 登录页背景 - 纯蓝 */
+        #loginSection {
+            background-color: #1e40af; /* 接近截图的深蓝色 */
+        }
+
+        /* 登录卡片 */
         .login-card {
             background: white;
-            border-radius: 24px;
-            padding: 40px 30px;
-            width: 85%; max-width: 340px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            /* 初始状态用于动画 */
-            opacity: 0; transform: translateY(20px);
-            animation: fadeInUp 0.6s ease-out forwards;
+            border-radius: 12px; /* 圆角稍小，接近截图 */
+            padding: 30px 25px;
+            width: 90%; 
+            max-width: 350px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
 
-        /* 侧边栏与滚动条 */
+        /* 输入框样式 */
+        .login-input {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            background-color: #fff;
+        }
+        .login-input:focus { border-color: #1e40af; }
+        .login-input::placeholder { color: #9ca3af; }
+
         .sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-closed { transform: translateX(100%); }
         .sidebar-open { transform: translateX(0); }
@@ -124,50 +139,50 @@
         .pull-indicator { height: 0; overflow: hidden; transition: height 0.2s; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #6b7280; font-size: 0.8rem; }
         .scroll-container { -webkit-overflow-scrolling: touch; }
 
-        /* Badges */
         .badge-new { background-color: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
     </style>
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
 
-    <!-- 4. 启动页 (Splash Screen) -->
+    <!-- 1. 启动页 (Splash Screen) -->
+    <!-- 完全按照要求：纯白背景，只有Logo，没有多余元素 -->
     <div id="splashScreen">
-        <!-- 使用 APP_ICON_LARGE (512px) 解决模糊问题 -->
-        <img src="" id="splashLogo" class="splash-logo-img mb-8">
+        <img src="" id="splashLogo" class="splash-img">
         <script>document.getElementById('splashLogo').src = APP_ICON_LARGE;</script>
-        
-        <div class="flex space-x-2 mt-4">
-            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0s"></div>
-            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
-        </div>
     </div>
 
-    <!-- A. 登录界面 (纯蓝背景 + 白色卡片) -->
-    <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden bg-[#1e3a8a]">
-        <div class="login-card text-center">
-            <!-- 登录框 Logo -->
-            <img src="" id="loginLogo" class="w-20 h-20 mx-auto mb-5 rounded-2xl shadow-sm">
-            <script>document.getElementById('loginLogo').src = APP_ICON_SMALL;</script>
+    <!-- 2. 登录界面 (Login Screen) -->
+    <!-- 完全按照截图：深蓝背景，白色卡片，图标+文字 -->
+    <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="login-card">
+            <!-- 图标部分 -->
+            <div class="text-[#1e40af] text-5xl mb-4">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
             
-            <h2 class="text-xl font-bold text-gray-800 mb-6">Welcome Back</h2>
+            <!-- 标题 -->
+            <h2 class="text-xl font-bold text-gray-800 mb-8">System Login</h2>
 
-            <div id="loginStatus" class="hidden text-xs bg-red-50 text-red-600 p-2 rounded mb-4 border border-red-100"></div>
+            <div id="loginStatus" class="hidden text-xs bg-red-50 text-red-600 p-2 rounded mb-4 text-center"></div>
             
-            <div class="space-y-4 text-left">
+            <div class="space-y-5 text-left">
+                <!-- ID Input -->
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Rep Code</label>
-                    <input type="text" id="loginRepCode" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition" placeholder="Enter ID">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">ID / Code</label>
+                    <input type="text" id="loginRepCode" class="login-input" placeholder="Rep Code or 'admin'">
                 </div>
+                
+                <!-- Password Input -->
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Password</label>
-                    <input type="password" id="loginPassword" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition" placeholder="••••">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" class="login-input" placeholder="••••">
                 </div>
-                <button onclick="performLogin()" class="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 active:scale-95 transition transform mt-2">
+                
+                <!-- Button -->
+                <button onclick="performLogin()" class="w-full bg-[#1e40af] text-white font-bold py-3 rounded-md shadow hover:bg-blue-800 transition mt-2">
                     LOGIN
                 </button>
             </div>
-            <p class="text-gray-300 text-[10px] mt-8">Sales Master Pro v9.7</p>
         </div>
     </div>
 
@@ -176,8 +191,7 @@
         <header class="bg-gray-800 text-white shadow-md z-20">
             <div class="container mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <img src="" id="adminHeaderLogo" class="w-8 h-8 rounded bg-white p-0.5">
-                    <script>document.getElementById('adminHeaderLogo').src = APP_ICON_SMALL;</script>
+                    <div class="bg-accent text-white w-8 h-8 rounded flex items-center justify-center font-bold text-sm">AD</div>
                     <h1 class="text-lg font-bold">ADMIN</h1>
                 </div>
                 <div class="flex items-center space-x-3">
@@ -272,8 +286,7 @@
         <header class="bg-white border-b border-gray-200 shadow-sm z-20">
             <div class="container mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <img src="" id="appHeaderLogo" class="w-10 h-10 rounded-lg shadow-sm border border-gray-100">
-                    <script>document.getElementById('appHeaderLogo').src = APP_ICON_SMALL;</script>
+                    <div class="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">SM</div>
                     <div>
                         <h1 class="text-lg font-bold text-gray-800">SALES MASTER</h1>
                         <p class="text-sm text-green-600 font-bold" id="welcomeUserText">...</p>
@@ -437,7 +450,7 @@
                 } else {
                     document.body.classList.add('loaded'); // 如果已登录，直接变灰
                 }
-            }, 2000); // 2秒启动页
+            }, 2000); 
 
             loadCSV();
             loadProductCSV(); 
@@ -551,20 +564,18 @@
         function addTaskToToday(did, cid) { addToTask(cid); db.collection('admin_tasks').doc(did).update({status: 'completed'}); }
         async function completeAssignedTask(docId) { if(!confirm("Mark completed?")) return; await db.collection('admin_tasks').doc(docId).update({ status: 'completed', completedDate: new Date().toISOString() }); const el = document.getElementById(`accept-${docId}`); el.classList.add('task-fade-out'); setTimeout(() => { adminTasks = adminTasks.filter(t => t.docId !== docId); renderAcceptTasks(); updateAssignedBadge(); }, 500); }
         async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if (d.exists && d.data().date === new Date().toLocaleDateString()) { todayTasks = d.data().tasks || []; } else { todayTasks = []; } }
-        async function saveTasksToCloud() { if(!currentUser || currentUser.isAdmin) return; await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
+        async function saveTasksToCloud() { if(!currentUser.isAdmin) await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
         async function loadHistoryFromCloud() { const snap = await db.collection('reports').where('repCode', '==', currentUser.code).get(); globalHistory = []; snap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() })); }
-        
         function handleMainSearch(query) {
             const container = document.getElementById('mainSearchResult'); if (query.length < 2) { container.classList.add('hidden'); return; }
             const res = myCustomers.find(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.id.toLowerCase().includes(query.toLowerCase()));
             container.classList.remove('hidden');
             if (res) { container.innerHTML = `<div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row justify-between items-center"><div class="mb-4 md:mb-0 text-left"><h3 class="text-xl font-bold text-primary">${res.name}</h3><div class="text-sm text-gray-500 mt-2 space-y-1"><div><i class="fa-solid fa-id-badge mr-2 w-5"></i> ${res.id}</div><div><a href="tel:${res.phone}" class="text-blue-600 hover:underline font-bold"><i class="fa-solid fa-phone mr-2 w-5"></i> ${res.phone}</a></div><div><i class="fa-solid fa-wallet mr-2 w-5"></i> Limit: ${res.credit}</div></div></div><button onclick="window.open('https://wa.me/233550584720?text=${encodeURIComponent(`I want statement of ${res.name} (${res.id})`)}', '_blank')" class="bg-green-100 text-green-700 px-5 py-2 rounded-lg font-bold hover:bg-green-200 transition"><i class="fa-brands fa-whatsapp mr-2"></i> Statement</button></div>`; } else { container.innerHTML = `<div class="bg-white p-4 rounded-xl text-center text-gray-400">Not Found</div>`; }
         }
-
         function toggleSidebar() { document.getElementById('taskSidebar').classList.toggle('sidebar-closed'); document.getElementById('taskSidebar').classList.toggle('sidebar-open'); if(document.getElementById('taskSidebar').classList.contains('sidebar-open')) { applySidebarFilter(); } }
         function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(myCustomers.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
         window.removeFromTask = function(id) { todayTasks = todayTasks.filter(t => t.id !== id); saveTasksToCloud(); renderTasks(); }
-        function renderTasks() { document.getElementById('todayTaskList').innerHTML = todayTasks.map(t => `<div class="bg-white p-4 rounded shadow border relative"><h4 class="font-bold">${t.name}</h4><a href="tel:${t.phone}" class="text-xs text-blue-500 hover:underline block my-1"><i class="fa-solid fa-phone"></i> ${t.phone}</a><button onclick="removeFromTask('${t.id}')" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
+        function renderTasks() { document.getElementById('todayTaskList').innerHTML = todayTasks.map(t => `<div class="bg-white p-4 rounded shadow border relative"><h4 class="font-bold">${t.name}</h4><button onclick="removeFromTask('${t.id}')" class="absolute top-2 right-2 text-red-500"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
         function shareTaskToGroup() { if(todayTasks.length === 0) return alert("Task list is empty"); let msg = `*${currentUser.name}'s Plan*\n${new Date().toLocaleDateString()}\n------------------\n`; todayTasks.forEach((t, i) => msg += `${i+1}. ${t.name}\n`); window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank'); }
         function openReportModal() { document.getElementById('reportModal').classList.remove('hidden'); document.getElementById('reportRows').innerHTML = ''; if(todayTasks.length) todayTasks.forEach(t => addReportRow(t)); else addReportRow(); }
         function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
