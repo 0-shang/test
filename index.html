@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 9.9.8</title>
+    <title>Sales Master Pro 9.9.9</title>
     
     <!-- ★★★ 图标配置 ★★★ -->
     <script>
@@ -11,7 +11,7 @@
     </script>
 
     <!-- PWA Settings -->
-    <meta name="theme-color" content="#1e3a8a">
+    <meta name="theme-color" content="#1e40af"> <!-- 状态栏改为深蓝，配合背景 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Sales Master">
@@ -58,8 +58,8 @@
             "short_name": "SalesMaster",
             "start_url": ".",
             "display": "standalone",
-            "background_color": "#ffffff",
-            "theme_color": "#1e3a8a",
+            "background_color": "#1e40af",
+            "theme_color": "#1e40af",
             "orientation": "portrait",
             "icons": [
                 { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
@@ -72,10 +72,14 @@
     </script>
     
     <style>
-        body { background-color: #1e3a8a; overflow: hidden; } 
+        /* ★★★ 1. 修复白屏的关键：默认背景设为深蓝 (#1e40af) ★★★ */
+        /* 这样在JS加载前，屏幕就是蓝色的，不会闪白屏 */
+        body { background-color: #1e40af; overflow: hidden; } 
+        
+        /* 当进入系统后，通过 JS 添加 loaded 类，背景变回灰色 */
         body.loaded { background-color: #f3f4f6; } 
 
-        #loginSection { background-color: #1e3a8a; } 
+        #loginSection { background-color: #1e40af; } 
 
         .login-card {
             background: white; border-radius: 12px; padding: 30px 25px; width: 90%; max-width: 350px;
@@ -86,7 +90,7 @@
             width: 100%; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; font-size: 14px;
             outline: none; transition: border-color 0.2s; background-color: #fff;
         }
-        .login-input:focus { border-color: #1e3a8a; }
+        .login-input:focus { border-color: #1e40af; }
         .login-input::placeholder { color: #9ca3af; }
 
         .btn-loading { opacity: 0.7; cursor: not-allowed; pointer-events: none; }
@@ -109,6 +113,8 @@
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
 
+    <!-- 删除了所有乱七八糟的 splashScreen div -->
+
     <!-- A. 登录界面 -->
     <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="login-card">
@@ -124,7 +130,7 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
                     <input type="password" id="loginPassword" class="login-input" placeholder="••••">
                 </div>
-                <button id="btnLogin" onclick="performLogin()" class="w-full bg-[#1e3a8a] text-white font-bold py-3 rounded-md shadow hover:bg-blue-800 transition mt-2 flex justify-center items-center">
+                <button id="btnLogin" onclick="performLogin()" class="w-full bg-[#1e40af] text-white font-bold py-3 rounded-md shadow hover:bg-blue-800 transition mt-2 flex justify-center items-center">
                     LOGIN
                 </button>
             </div>
@@ -378,21 +384,20 @@
         let todayTasks = [];
         let globalHistory = []; 
         let adminTasks = [];
-        let activePdfRequest = null;
-        let currentPdfBlobUrl = null;
+        let adminExportLogs = []; 
         
-        // 3. 动态生成 Rep Directory
         let repDirectory = {};
 
+        // ★★★ 启动逻辑：不使用 splashScreen，直接背景色覆盖 ★★★
         window.onload = function() {
             setTimeout(() => {
-                const saved = localStorage.getItem('salesMasterUser'); // 2. Using localStorage
+                const saved = localStorage.getItem('salesMasterUser');
                 if(!saved) {
                     document.getElementById('loginSection').classList.remove('hidden');
                 } else {
-                    document.body.classList.add('loaded');
+                    document.body.classList.add('loaded'); // 如果已登录，变为灰色
                 }
-            }, 100);
+            }, 50); // 极短延迟，仅用于确保DOM Ready
 
             loadCSV();
             loadProductCSV(); 
@@ -404,7 +409,6 @@
 
         function initDraggableListBtn() { const btn = document.getElementById('draggableListBtn'); let isDragging = false, startY, startTop; const handleStart = (e) => { isDragging = false; const touch = e.touches ? e.touches[0] : e; startY = touch.clientY; startTop = btn.offsetTop; }; const handleMove = (e) => { const touch = e.touches ? e.touches[0] : e; if (Math.abs(touch.clientY - startY) > 5) isDragging = true; if (isDragging) { e.preventDefault(); let newTop = startTop + (touch.clientY - startY); btn.style.top = Math.max(50, Math.min(window.innerHeight - 80, newTop)) + 'px'; } }; btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchmove', handleMove, {passive: false}); btn.addEventListener('click', () => { if (!isDragging) openProductPage(); }); }
         
-        // 2. Persistent Login Check
         function checkSession() { 
             const saved = localStorage.getItem('salesMasterUser'); 
             if(saved) { 
@@ -436,13 +440,12 @@
             } catch (e) { console.error(e); } 
         }
 
-        // 3. Dynamic Rep Directory Construction
+        // Dynamic Rep Directory
         function loadCSV() { 
             Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
                 allSalesData = results.data.map(item => {
                     const rCode = (item.Limit||item.limit||"").trim().toUpperCase();
                     const rName = (item.RepName||item.repname||"Sales").trim();
-                    // Build directory dynamically
                     if(rCode && rName) repDirectory[rCode] = rName;
                     
                     return { 
@@ -485,7 +488,7 @@
 
             if (code.toLowerCase() === 'admin' && pass === '8888') { 
                 currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; 
-                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); // 2. localStorage
+                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
                 await refreshData(); 
                 document.getElementById('loginSection').classList.add('hidden'); 
                 document.getElementById('adminSection').classList.remove('hidden'); 
@@ -515,7 +518,7 @@
             myCustomers = customers; 
             let finalName = repDirectory[code] || customers[0].csvRepName; 
             currentUser = { code: code, name: finalName, isAdmin: false }; 
-            localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); // 2. localStorage
+            localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
             
             await refreshData(); 
             document.getElementById('loginSection').classList.add('hidden'); 
@@ -549,8 +552,9 @@
             adminTasks = []; taskSnap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() }));
             const repSnap = await db.collection('reports').orderBy('timestamp', 'desc').get();
             globalHistory = []; repSnap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() }));
+            const logSnap = await db.collection('export_logs').orderBy('timestamp', 'desc').limit(200).get();
+            adminExportLogs = []; logSnap.forEach(doc => adminExportLogs.push({ docId: doc.id, ...doc.data() }));
         }
-        
         function switchAdminTab(tab) { 
             const active = document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`);
             if (!active.classList.contains('hidden')) return;
@@ -568,8 +572,6 @@
         }
 
         function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
-        
-        // 1. Export Fix: Export ALL data, but Render only 50
         function renderAdminReports() { 
             const dateVal = document.getElementById('adminReportDateFilter').value; 
             const repVal = document.getElementById('adminReportRepFilter').value; 
@@ -592,7 +594,6 @@
             }); 
         }
 
-        // 1. Fixed Admin Export (All Data)
         function adminExportReports() {
             let csv = "Date,Rep,Customer,Note\n";
             const dateVal = document.getElementById('adminReportDateFilter').value;
@@ -665,12 +666,9 @@
         }
         async function adminRestoreTask(id) { if(confirm('Undo this task?')) await db.collection('admin_tasks').doc(id).update({status: 'pending'}); refreshData(); }
         async function adminDeleteTask(id) { if(confirm('Delete task permanently?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
-        
-        // 1. Fixed Admin Export (Tasks)
         function adminExportTasks() {
             let csv = "AssignedDate,Rep,Customer,Detail,Status\n";
             const f = document.getElementById('adminTaskFilter').value.toLowerCase(); 
-            // Export ALL matching
             adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f)).forEach(t => {
                 csv += `${t.assignedDate},${t.repName},${t.customerName},"${t.taskDetail}",${t.status}\n`;
             });
@@ -699,8 +697,28 @@
         function filterSidebarList(val) { applySidebarFilter(); }
         async function loadAssignedTasksForRep() { const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', '==', 'pending').get(); adminTasks = []; snap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() })); }
         function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
-        function renderAcceptTasks() { document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `<div class="bg-white p-4 rounded shadow mb-2 flex justify-between"><div><div class="font-bold">${t.customerName}</div><div class="text-xs">${t.taskDetail}</div></div><button onclick="addTaskToToday('${t.docId}','${t.customerId}')" class="bg-primary text-white px-3 rounded">Add</button></div>`).join(''); document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); }
-        function addTaskToToday(did, cid) { addToTask(cid); db.collection('admin_tasks').doc(did).update({status: 'completed'}); }
+        
+        // ★★★ 2. 修复：恢复成 "Plus" 和 "Check" 图标按钮 ★★★
+        function renderAcceptTasks() { 
+            const container = document.getElementById('acceptTaskList'); const noMsg = document.getElementById('noAssignedTasksMsg'); container.innerHTML = '';
+            if (adminTasks.length === 0) { noMsg.classList.remove('hidden'); return; } noMsg.classList.add('hidden');
+            adminTasks.forEach(t => { 
+                const div = document.createElement('div'); div.id = `accept-${t.docId}`; div.className = "bg-white p-4 rounded shadow border-l-4 border-primary flex justify-between items-center animate-fade-in"; 
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-gray-800">${t.customerName} <span class="text-xs bg-gray-200 px-1 rounded">${t.customerId}</span></div>
+                        <div class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-user-tag mr-1"></i> ${t.taskDetail}</div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="addTaskToToday('${t.docId}', '${t.customerId}')" class="bg-gray-100 w-10 h-10 rounded-full hover:bg-green-200 text-green-600 shadow flex items-center justify-center" title="Add to Today"><i class="fa-solid fa-plus"></i></button>
+                        <button onclick="completeAssignedTask('${t.docId}')" class="bg-primary w-10 h-10 rounded-full hover:bg-blue-800 text-white shadow flex items-center justify-center" title="Mark Done"><i class="fa-solid fa-check"></i></button>
+                    </div>`; 
+                container.appendChild(div); 
+            }); 
+            document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); 
+        }
+        
+        function addTaskToToday(did, cid) { addToTask(cid); const btn = document.querySelector(`#accept-${did} button`); if(btn) btn.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>'; }
         async function completeAssignedTask(docId) { if(!confirm("Mark completed?")) return; await db.collection('admin_tasks').doc(docId).update({ status: 'completed', completedDate: new Date().toISOString() }); const el = document.getElementById(`accept-${docId}`); el.classList.add('task-fade-out'); setTimeout(() => { adminTasks = adminTasks.filter(t => t.docId !== docId); renderAcceptTasks(); updateAssignedBadge(); }, 500); }
         async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if (d.exists && d.data().date === new Date().toLocaleDateString()) { todayTasks = d.data().tasks || []; } else { todayTasks = []; } }
         async function saveTasksToCloud() { if(!currentUser.isAdmin) await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
