@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 9.3</title>
+    <title>Sales Master Pro 9.5</title>
     
-    <!-- 设置为本地 icon.png -->
+    <!-- ★★★ 1. 本地图标配置 ★★★ -->
     <script>
         const APP_LOGO = "icon.png"; 
     </script>
@@ -17,15 +17,8 @@
     <meta name="apple-mobile-web-app-title" content="Sales Master">
     
     <script>
-        const iconLink = document.createElement('link');
-        iconLink.rel = 'apple-touch-icon';
-        iconLink.href = APP_LOGO;
-        document.head.appendChild(iconLink);
-        
-        const favLink = document.createElement('link');
-        favLink.rel = 'icon';
-        favLink.href = APP_LOGO;
-        document.head.appendChild(favLink);
+        const iconLink = document.createElement('link'); iconLink.rel = 'apple-touch-icon'; iconLink.href = APP_LOGO; document.head.appendChild(iconLink);
+        const favLink = document.createElement('link'); favLink.rel = 'icon'; favLink.href = APP_LOGO; document.head.appendChild(favLink);
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,46 +61,37 @@
             "background_color": "#1e3a8a",
             "theme_color": "#1e3a8a",
             "orientation": "portrait",
-            "icons": [{
-                "src": APP_LOGO,
-                "sizes": "192x192",
-                "type": "image/png"
-            }, {
-                "src": APP_LOGO,
-                "sizes": "512x512",
-                "type": "image/png"
-            }]
+            "icons": [{ "src": APP_LOGO, "sizes": "192x192", "type": "image/png" }, { "src": APP_LOGO, "sizes": "512x512", "type": "image/png" }]
         };
-        const stringManifest = JSON.stringify(manifest);
-        const blob = new Blob([stringManifest], {type: 'application/json'});
-        const manifestURL = URL.createObjectURL(blob);
-        const link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = manifestURL;
-        document.head.appendChild(link);
+        const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        const link = document.createElement('link'); link.rel = 'manifest'; link.href = URL.createObjectURL(blob); document.head.appendChild(link);
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Failed', err));
-            });
-        }
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Failed', err)); }); }
     </script>
     
     <style>
-        body { background-color: #1e3a8a; } 
+        /* 4. 全新启动页与登录样式 (Full App Feel) */
+        body { background-color: #1e3a8a; overflow: hidden; } 
         body.loaded { background-color: #f3f4f6; }
 
-        #globalLoader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #1e3a8a;
-            z-index: 9999;
+        /* Startup Splash Screen */
+        #splashScreen {
+            position: fixed; inset: 0; background: #1e3a8a; z-index: 10000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.6s ease-out, visibility 0.6s;
         }
-        #globalLoader.hidden { opacity: 0; pointer-events: none; }
-        
-        .logo-pulse { width: 80px; height: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
+        #splashScreen.hidden { opacity: 0; visibility: hidden; }
+        .splash-logo { width: 120px; height: 120px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); animation: breathe 3s infinite ease-in-out; }
+        @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        /* Login Card */
+        .login-card {
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 40px 30px; width: 85%; max-width: 360px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); transform: translateY(20px); opacity: 0;
+            animation: slideUp 0.6s ease-out forwards; animation-delay: 0.5s;
+        }
+        @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
 
         .sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-closed { transform: translateX(100%); }
@@ -116,47 +100,51 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
         
-        #draggableListBtn {
-            transition: box-shadow 0.2s; box-shadow: -2px 2px 8px rgba(0,0,0,0.2);
-            touch-action: none; z-index: 50;
-        }
+        #draggableListBtn { transition: box-shadow 0.2s; box-shadow: -2px 2px 8px rgba(0,0,0,0.2); touch-action: none; z-index: 50; }
         #draggableListBtn:active { opacity: 0.9; }
 
-        .task-fade-out { animation: fadeOut 0.5s forwards; }
-        @keyframes fadeOut { to { opacity: 0; transform: translateX(20px); height: 0; padding: 0; margin: 0; } }
         .pull-indicator { height: 0; overflow: hidden; transition: height 0.2s; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #6b7280; font-size: 0.8rem; }
         .scroll-container { -webkit-overflow-scrolling: touch; }
+
+        /* Badges */
+        .badge-new { background-color: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
     </style>
 </head>
-<body class="text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
+<body class="text-gray-800 font-sans h-screen flex flex-col">
 
-    <!-- Global Loader -->
-    <div id="globalLoader">
-        <img src="" id="loaderLogo" class="logo-pulse rounded-xl shadow-lg">
-        <script>document.getElementById('loaderLogo').src = APP_LOGO;</script>
-        <p class="text-white font-bold tracking-widest mt-2 text-sm opacity-80">INITIALIZING...</p>
+    <!-- 4. 启动页 (Splash Screen) -->
+    <div id="splashScreen">
+        <img src="" id="splashLogo" class="splash-logo mb-6">
+        <script>document.getElementById('splashLogo').src = APP_LOGO;</script>
+        <h1 class="text-white text-2xl font-bold tracking-widest opacity-90">SALES MASTER</h1>
+        <p class="text-blue-200 text-xs mt-2 tracking-widest">PRO EDITION 9.5</p>
+        <div class="mt-8 flex space-x-2">
+            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0s"></div>
+            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+        </div>
     </div>
 
-    <!-- A. 登录界面 -->
-    <div id="loginSection" class="fixed inset-0 z-50 bg-primary flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
-            <div class="bg-gray-50 p-8 text-center border-b border-gray-100">
-                <img src="" id="loginLogo" class="w-20 h-20 mx-auto mb-4 rounded-xl shadow">
-                <script>document.getElementById('loginLogo').src = APP_LOGO;</script>
-                <h2 class="text-2xl font-bold text-gray-800">System Login</h2>
-            </div>
-            <div class="p-8 space-y-6">
-                <div id="loginStatus" class="hidden text-sm text-center p-2 rounded bg-red-50 text-red-600"></div>
+    <!-- A. 登录界面 (Styled as requested) -->
+    <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="login-card text-center">
+            <img src="" id="loginLogo" class="w-20 h-20 mx-auto mb-6 rounded-2xl shadow-md">
+            <script>document.getElementById('loginLogo').src = APP_LOGO;</script>
+            <div id="loginStatus" class="hidden text-xs bg-red-100 text-red-600 p-2 rounded mb-4"></div>
+            <div class="space-y-5 text-left">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ID / Code</label>
-                    <input type="text" id="loginRepCode" placeholder="Rep Code or 'admin'" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Rep Code</label>
+                    <input type="text" id="loginRepCode" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none transition" placeholder="Enter ID">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="loginPassword" placeholder="••••" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none transition" placeholder="••••">
                 </div>
-                <button onclick="performLogin()" class="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-blue-900 transition">LOGIN</button>
+                <button onclick="performLogin()" class="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 active:scale-95 transition transform">
+                    LOGIN
+                </button>
             </div>
+            <p class="text-gray-400 text-[10px] mt-6">Authorized Personnel Only</p>
         </div>
     </div>
 
@@ -170,16 +158,15 @@
                     <h1 class="text-lg font-bold">ADMIN</h1>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <button onclick="refreshData()" class="text-gray-300 hover:text-white"><i class="fa-solid fa-rotate"></i></button>
+                    <!-- 2. Refresh Button Removed -->
                     <button onclick="logout()" class="text-red-300 hover:text-white"><i class="fa-solid fa-power-off"></i></button>
                 </div>
             </div>
-            <!-- Tabs -->
             <div class="flex bg-gray-700 text-sm overflow-x-auto">
                 <button onclick="switchAdminTab('assign')" id="btnTabAssign" class="flex-1 py-3 hover:bg-gray-600 text-accent font-bold border-b-2 border-accent">Assign</button>
                 <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-gray-600 text-gray-300">Tasks</button>
                 <button onclick="switchAdminTab('reports')" id="btnTabReports" class="flex-1 py-3 hover:bg-gray-600 text-gray-300">Reports</button>
-                <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-gray-600 text-gray-300">Export Logs</button>
+                <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-gray-600 text-gray-300">Request Logs</button>
             </div>
         </header>
 
@@ -248,25 +235,12 @@
                 <div id="adminReportMobileList" class="md:hidden space-y-3"></div>
             </div>
 
+            <!-- 3. Admin PDF Requests Tab -->
             <div id="adminTabExports" class="max-w-6xl mx-auto hidden space-y-4">
                 <div class="bg-white p-4 rounded shadow mb-4">
-                    <div class="flex flex-col md:flex-row gap-3 items-end md:items-center">
-                        <div class="w-full md:w-auto">
-                            <label class="text-[10px] text-gray-500 font-bold block mb-1">DATE</label>
-                            <input type="date" id="adminLogDateFilter" class="w-full p-2 border rounded text-sm bg-gray-50" onchange="renderAdminExportLogs()">
-                        </div>
-                        <div class="w-full md:w-auto">
-                            <label class="text-[10px] text-gray-500 font-bold block mb-1">SALES REP</label>
-                            <select id="adminLogRepFilter" class="w-full p-2 border rounded text-sm bg-gray-50" onchange="renderAdminExportLogs()">
-                                <option value="">All Representatives</option>
-                            </select>
-                        </div>
-                        <div class="flex-1 text-xs text-gray-500 pt-4">
-                            * Shows PDF generation history synced from sales devices.
-                        </div>
-                    </div>
+                    <h3 class="font-bold text-gray-700 mb-2">PDF Approval Queue</h3>
+                    <div id="adminRequestList" class="space-y-2"></div>
                 </div>
-                <div id="adminExportLogList" class="space-y-2"></div>
             </div>
         </main>
     </div>
@@ -289,7 +263,7 @@
                         <span id="assignedCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
                         <span class="text-xs font-bold ml-1 hidden md:inline">Assigned</span>
                     </button>
-                    <button onclick="refreshData()" class="text-gray-400 hover:text-primary mr-2"><i class="fa-solid fa-rotate"></i></button>
+                    <!-- 2. Refresh Button Removed -->
                     <button onclick="logout()" class="text-red-400 hover:text-red-600 ml-2"><i class="fa-solid fa-power-off text-lg"></i></button>
                 </div>
             </div>
@@ -299,6 +273,7 @@
             <main id="salesMain" class="flex-1 overflow-y-auto p-4 md:p-8 relative bg-gray-50">
                 <div id="salesPullIndicator" class="pull-indicator"><i class="fa-solid fa-arrow-down mr-2"></i> Pull to refresh</div>
 
+                <!-- 1. Customer Search (Fixed) -->
                 <div class="max-w-4xl mx-auto mt-2">
                     <div class="relative max-w-2xl mx-auto">
                         <input type="text" id="mainSearchInput" placeholder="Search Customer Name or Code..." class="w-full pl-6 pr-14 py-4 rounded-full shadow-lg border-none focus:ring-2 focus:ring-accent outline-none text-lg" oninput="handleMainSearch(this.value)">
@@ -348,7 +323,7 @@
         </div>
     </div>
 
-    <!-- D. 独立产品搜索页面 (Interactive Export Button) -->
+    <!-- D. Product List & Request PDF -->
     <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col h-screen animate-fade-in">
         <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center shrink-0">
             <h2 class="text-xl font-bold flex items-center"><i class="fa-solid fa-box-open mr-2"></i> Product List</h2>
@@ -359,19 +334,19 @@
             <div class="bg-white p-4 rounded-lg shadow-sm mb-4 shrink-0">
                 <div class="flex flex-col md:flex-row gap-3">
                     <div class="relative flex-1">
-                        <input type="text" id="productSearchInput" placeholder="Ex: POWER RACK COROLLA" 
+                        <input type="text" id="productSearchInput" placeholder="Ex: POWER RACK NEW" 
                                class="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent outline-none text-lg"
                                oninput="handleProductSearch(this.value)">
                         <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                     </div>
                     
-                    <!-- 交互式 PDF 按钮 -->
-                    <button id="btnExportPDF" onclick="exportProductPDF()" class="relative overflow-hidden bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[150px]">
-                        <span id="btnExportText"><i class="fa-solid fa-file-pdf mr-2"></i> Export PDF</span>
+                    <!-- 3. Interactive Request Button -->
+                    <button id="btnRequestPDF" onclick="requestPdfApproval()" class="relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]">
+                        <span id="btnRequestText"><i class="fa-solid fa-paper-plane mr-2"></i> Request PDF</span>
                     </button>
                 </div>
                 <div class="mt-2 text-xs text-gray-500 font-bold flex justify-between">
-                    <span>Showing products with Stock > 0</span>
+                    <span>Search 'new' for new arrivals, 'old' for stock clearance</span>
                     <span id="productCountBadge">0 results found</span>
                 </div>
             </div>
@@ -379,13 +354,13 @@
             <div id="productResultsContainer" class="flex-1 overflow-y-auto min-h-0 space-y-3 pb-10 scroll-container">
                 <div class="text-center text-gray-400 mt-10">
                     <i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i>
-                    <p>Enter keywords to search (e.g., '101 COROLLA')</p>
+                    <p>Enter keywords to search.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- 1. Assigned Task Modal (Reverted to Original Design) -->
     <div id="assignedTaskModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-2xl h-3/4 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
@@ -399,6 +374,7 @@
         </div>
     </div>
 
+    <!-- Report Modal -->
     <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-4xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden">
             <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
@@ -425,20 +401,23 @@
         let todayTasks = [];
         let globalHistory = []; 
         let adminTasks = [];
-        let adminExportLogs = []; 
-        let currentPdfBlobUrl = null; // Store Blob for "Open" action
+        let activePdfRequest = null; // Store active PDF request
+        let currentPdfBlobUrl = null;
 
         const repDirectory = {
             "10543": "Beny", "10882": "Prince", "10989": "Abigail", "11006": "Hilda", "11029": "Linda"
         };
 
         window.onload = function() {
+            // 4. Splash Screen Logic
             setTimeout(() => {
-                document.getElementById('globalLoader').classList.add('hidden');
+                const splash = document.getElementById('splashScreen');
+                splash.classList.add('hidden');
                 document.body.classList.add('loaded'); 
+                
                 const saved = sessionStorage.getItem('salesMasterUser');
                 if(!saved) document.getElementById('loginSection').classList.remove('hidden');
-            }, 1000);
+            }, 2500);
 
             loadCSV();
             loadProductCSV(); 
@@ -448,15 +427,45 @@
             initPullToRefresh('salesMain', 'salesPullIndicator');
         };
 
-        // ... [Functions: initDraggableListBtn, checkSession, initPullToRefresh, refreshData, loadCSV, loadProductCSV, performLogin, logout] ...
-        // (保持原有逻辑不变，为了节省篇幅，此处省略，请确保复制时包含这些基础功能函数)
         function initDraggableListBtn() { const btn = document.getElementById('draggableListBtn'); let isDragging = false, startY, startTop; const handleStart = (e) => { isDragging = false; const touch = e.touches ? e.touches[0] : e; startY = touch.clientY; startTop = btn.offsetTop; }; const handleMove = (e) => { const touch = e.touches ? e.touches[0] : e; if (Math.abs(touch.clientY - startY) > 5) isDragging = true; if (isDragging) { e.preventDefault(); let newTop = startTop + (touch.clientY - startY); btn.style.top = Math.max(50, Math.min(window.innerHeight - 80, newTop)) + 'px'; } }; btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchmove', handleMove, {passive: false}); btn.addEventListener('click', () => { if (!isDragging) openProductPage(); }); }
         function checkSession() { const saved = sessionStorage.getItem('salesMasterUser'); if(saved) { const user = JSON.parse(saved); document.getElementById('loginRepCode').value = user.code === 'admin' ? 'admin' : user.code; document.getElementById('loginPassword').value = user.code === 'admin' ? '8888' : '0000'; performLogin(); } }
         function initPullToRefresh(containerId, indicatorId) { const container = document.getElementById(containerId); const indicator = document.getElementById(indicatorId); let startY = 0; let isPulling = false; container.addEventListener('touchstart', (e) => { if (container.scrollTop === 0) { startY = e.touches[0].clientY; isPulling = true; } }); container.addEventListener('touchmove', (e) => { if (!isPulling) return; const y = e.touches[0].clientY; const diff = y - startY; if (diff > 0 && diff < 200 && container.scrollTop === 0) { indicator.style.height = `${diff / 3}px`; } }); container.addEventListener('touchend', (e) => { if (!isPulling) return; isPulling = false; const endY = e.changedTouches[0].clientY; if (endY - startY > 80 && container.scrollTop === 0) { indicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Refreshing...'; indicator.style.height = '50px'; refreshData().then(() => { setTimeout(() => { indicator.style.height = '0px'; indicator.innerHTML = '<i class="fa-solid fa-arrow-down mr-2"></i> Pull to refresh'; }, 500); }); } else { indicator.style.height = '0px'; } }); }
-        async function refreshData() { if (!currentUser) return; try { if(currentUser.isAdmin) { await loadAllDataForAdmin(); renderAdminTasks(); renderAdminReports(); renderAdminExportLogs(); } else { await loadTasksFromCloud(); await loadHistoryFromCloud(); await loadAssignedTasksForRep(); applySidebarFilter(); renderTasks(); updateAssignedBadge(); } } catch (e) { console.error("Refresh Error", e); } }
+        
+        async function refreshData() { 
+            if (!currentUser) return; 
+            try { 
+                if(currentUser.isAdmin) { 
+                    await loadAllDataForAdmin(); 
+                    renderAdminTasks(); 
+                    renderAdminReports();
+                    renderAdminRequests(); // Load Admin Requests
+                } else { 
+                    await loadTasksFromCloud(); 
+                    await loadHistoryFromCloud(); 
+                    await loadAssignedTasksForRep(); 
+                    applySidebarFilter(); 
+                    renderTasks(); 
+                    updateAssignedBadge(); 
+                } 
+            } catch (e) { console.error(e); } 
+        }
+
         function loadCSV() { Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { allSalesData = results.data.map(item => ({ id: (item.Code||item.code||"").trim(), name: (item.Name||item.name||"Unknown").trim(), csvRepName: (item.RepName||item.repname||"Sales").trim(), repCode: (item.Limit||item.limit||"").trim().toUpperCase(), phone: (item.Phone||item.phone||"").trim(), credit: (item.Credit||item.credit||"0").trim() })); } }); }
-        function loadProductCSV() { Papa.parse("products.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { allProductData = results.data.map(item => ({ code: (item.Code||item.code||"").trim(), name: (item.Name||item.name||"").trim(), stock: parseFloat(item.Stock||item.stock||"0"), price: (item.Price||item.price||"0").trim(), promo: (item.PromoPrice||item.promoprice||"").trim(), isNew: (item.New||item.new||"").trim() })); }, error: function(err) { console.warn("Could not load products.csv", err); } }); }
-        async function performLogin() { const code = document.getElementById('loginRepCode').value.trim(); const pass = document.getElementById('loginPassword').value.trim(); const status = document.getElementById('loginStatus'); if (code.toLowerCase() === 'admin' && pass === '8888') { currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('adminSection').classList.remove('hidden'); addAssignRow(); initAdminReportFilters(); return; } if (pass !== '0000') { status.innerText = "Wrong Password"; status.classList.remove('hidden'); return; } const customers = allSalesData.filter(c => c.repCode == code); if (customers.length === 0) { if(document.activeElement.id === 'loginRepCode') { status.innerText = "Code not found"; status.classList.remove('hidden'); } return; } myCustomers = customers; let finalName = repDirectory[code] || customers[0].csvRepName; currentUser = { code: code, name: finalName, isAdmin: false }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; }
+        
+        // 5. Product CSV Load (New/Old Logic)
+        function loadProductCSV() { 
+            Papa.parse("products.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
+                allProductData = results.data.map(item => ({ 
+                    code: (item.Code||item.code||"").trim(), 
+                    name: (item.Name||item.name||"").trim(), 
+                    stock: parseFloat(item.Stock||item.stock||"0"), 
+                    price: (item.Price||item.price||"0").trim(), 
+                    isNew: (item.New||item.new||"0").trim() // 1=New, 2=Old
+                })); 
+            }}); 
+        }
+
+        async function performLogin() { const code = document.getElementById('loginRepCode').value.trim(); const pass = document.getElementById('loginPassword').value.trim(); const status = document.getElementById('loginStatus'); if (code.toLowerCase() === 'admin' && pass === '8888') { currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('adminSection').classList.remove('hidden'); addAssignRow(); initAdminReportFilters(); return; } if (pass !== '0000') { status.innerText = "Wrong Password"; status.classList.remove('hidden'); return; } const customers = allSalesData.filter(c => c.repCode == code); if (customers.length === 0) { if(document.activeElement.id === 'loginRepCode') { status.innerText = "Code not found"; status.classList.remove('hidden'); } return; } myCustomers = customers; let finalName = repDirectory[code] || customers[0].csvRepName; currentUser = { code: code, name: finalName, isAdmin: false }; sessionStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; listenForPdfStatus(); }
         function logout() { sessionStorage.removeItem('salesMasterUser'); location.reload(); }
 
         // ================= ADMIN FUNCTIONS =================
@@ -465,14 +474,46 @@
             adminTasks = []; taskSnap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() }));
             const repSnap = await db.collection('reports').orderBy('timestamp', 'desc').get();
             globalHistory = []; repSnap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() }));
-            const logSnap = await db.collection('export_logs').orderBy('timestamp', 'desc').limit(200).get();
-            adminExportLogs = []; logSnap.forEach(doc => adminExportLogs.push({ docId: doc.id, ...doc.data() }));
         }
-        function switchAdminTab(tab) { ['assign','history','reports','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-gray-600 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-gray-600 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { initAdminLogFilters(); renderAdminExportLogs(); } }
+        function switchAdminTab(tab) { ['assign','history','reports','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-gray-600 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-gray-600 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } }
         function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
-        function initAdminLogFilters() { const sel = document.getElementById('adminLogRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
         function renderAdminReports() { const dateVal = document.getElementById('adminReportDateFilter').value; const repVal = document.getElementById('adminReportRepFilter').value; const textVal = document.getElementById('adminReportTextFilter').value.toLowerCase(); const tbody = document.getElementById('adminReportTableBody'); const mobileContainer = document.getElementById('adminReportMobileList'); tbody.innerHTML = ''; mobileContainer.innerHTML = ''; globalHistory.filter(r => { let matchDate = true; if (dateVal) { const rDate = new Date(r.date); const filterDate = new Date(dateVal); matchDate = (rDate.toDateString() === filterDate.toDateString()); } let matchRep = true; if (repVal) matchRep = (r.repCode === repVal); let matchText = true; if (textVal) matchText = (r.customerName && r.customerName.toLowerCase().includes(textVal)); return matchDate && matchRep && matchText; }).forEach(r => { const dateStr = new Date(r.date).toLocaleDateString(); const repName = repDirectory[r.repCode] || r.repCode; tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${dateStr}</td><td class="p-3 font-bold">${repName}</td><td class="p-3">${r.customerName}</td><td class="p-3 text-gray-600">${r.note}</td></tr>`; mobileContainer.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-gray-500 mb-2"><div class="flex justify-between items-center mb-1"><span class="font-bold text-gray-800">${repName}</span><span class="text-xs text-gray-400">${dateStr}</span></div><div class="text-sm font-bold text-primary mb-1">${r.customerName}</div><div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">${r.note}</div></div>`; }); }
-        function renderAdminExportLogs() { const dateVal = document.getElementById('adminLogDateFilter').value; const repVal = document.getElementById('adminLogRepFilter').value; const list = document.getElementById('adminExportLogList'); list.innerHTML = ''; const filtered = adminExportLogs.filter(log => { let matchDate = true; if (dateVal) { const lDate = log.timestamp ? log.timestamp.toDate() : new Date(); const fDate = new Date(dateVal); matchDate = (lDate.toDateString() === fDate.toDateString()); } let matchRep = true; if (repVal) matchRep = (log.repCode === repVal); return matchDate && matchRep; }); if(filtered.length === 0) { list.innerHTML = '<div class="text-gray-400 text-center p-4">No export records found.</div>'; return; } filtered.forEach(log => { const ts = log.timestamp ? log.timestamp.toDate().toLocaleString() : 'N/A'; list.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-red-500 flex justify-between items-center"><div><div class="font-bold text-gray-800">${log.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div><div class="text-sm text-gray-600">Generated: <span class="font-mono text-xs bg-gray-100 px-1 rounded">${log.fileName}</span></div></div><div class="text-xs font-bold text-gray-400">PDF</div></div>`; }); }
+        
+        // 3. Admin Request Approval Logic
+        async function renderAdminRequests() {
+            const list = document.getElementById('adminRequestList');
+            list.innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
+            
+            // Get pending requests
+            const snap = await db.collection('pdf_requests').where('status', '==', 'pending').orderBy('timestamp', 'desc').get();
+            list.innerHTML = '';
+            
+            if (snap.empty) {
+                list.innerHTML = '<div class="text-gray-400 text-center p-4">No pending requests.</div>';
+                return;
+            }
+
+            snap.forEach(doc => {
+                const req = doc.data();
+                const ts = req.timestamp ? req.timestamp.toDate().toLocaleTimeString() : 'Just now';
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded shadow border-l-4 border-orange-400 flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-gray-800">${req.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div>
+                            <div class="text-sm text-gray-600">Requesting: <span class="font-mono bg-gray-100 px-1 rounded">${req.query}</span></div>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="adminRejectRequest('${doc.id}')" class="bg-red-100 text-red-600 w-10 h-10 rounded-full hover:bg-red-200"><i class="fa-solid fa-times"></i></button>
+                            <button onclick="adminApproveRequest('${doc.id}')" class="bg-green-100 text-green-600 w-10 h-10 rounded-full hover:bg-green-200"><i class="fa-solid fa-check"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function adminApproveRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'approved'}); renderAdminRequests(); }
+        async function adminRejectRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'rejected'}); renderAdminRequests(); }
+
+        // Bulk Assign / Admin Tasks (Maintained)
         function addAssignRow() { const container = document.getElementById('assignRowsContainer'); const rowId = Date.now() + Math.random(); let repCheckboxes = '<div class="h-24 overflow-y-auto border rounded p-2 bg-white">'; for (const [code, name] of Object.entries(repDirectory)) { repCheckboxes += `<label class="flex items-center space-x-2 mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded"><input type="checkbox" value="${code}" class="assign-rep-checkbox accent-primary"><span class="text-xs text-gray-700 font-bold">${name}</span></label>`; } repCheckboxes += '</div>'; const div = document.createElement('div'); div.className = "assign-row bg-gray-50 p-3 rounded border grid grid-cols-1 md:grid-cols-3 gap-2 relative"; div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow hover:bg-red-600">X</button><div><label class="text-[10px] font-bold text-gray-500">SELECT REPS</label>${repCheckboxes}</div><div><label class="text-[10px] font-bold text-gray-500">CUSTOMER</label><div class="relative"><input type="text" placeholder="Search..." class="w-full p-2 border rounded text-sm" onkeyup="searchAdminCustInRow(this, '${rowId}')"><div id="res-${rowId}" class="absolute z-10 bg-white w-full max-h-40 overflow-auto shadow hidden border"></div><input type="hidden" class="assign-cust-id"><input type="hidden" class="assign-cust-name"></div></div><div><label class="text-[10px] font-bold text-gray-500">INSTRUCTION</label><input type="text" class="assign-note w-full p-2 border rounded text-sm" placeholder="Task details..."></div>`; container.appendChild(div); }
         function searchAdminCustInRow(inp, rowId) { const val = inp.value.toLowerCase(); const box = document.getElementById(`res-${rowId}`); if(val.length<2) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); allSalesData.filter(c => c.name.toLowerCase().includes(val)).slice(0,10).forEach(c => { const d = document.createElement('div'); d.className = "p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText = `${c.name} (${c.id})`; d.onclick = () => { inp.value = c.name; inp.parentElement.querySelector('.assign-cust-id').value = c.id; inp.parentElement.querySelector('.assign-cust-name').value = c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
         async function adminSubmitBulkTasks() { const rows = document.querySelectorAll('.assign-row'); const batch = db.batch(); let count = 0; rows.forEach(row => { const cbs = row.querySelectorAll('.assign-rep-checkbox:checked'); const cid = row.querySelector('.assign-cust-id').value; const cnm = row.querySelector('.assign-cust-name').value; const nt = row.querySelector('.assign-note').value; if(cbs.length && cid && nt) { cbs.forEach(cb => { const ref = db.collection('admin_tasks').doc(); batch.set(ref, { repCode: cb.value, repName: repDirectory[cb.value], customerId: cid, customerName: cnm, taskDetail: nt, status: 'pending', assignedDate: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }); count++; }); } }); if(count>0) { await batch.commit(); alert('Tasks Assigned'); document.getElementById('assignRowsContainer').innerHTML = ''; addAssignRow(); } }
@@ -480,32 +521,17 @@
         async function adminRestoreTask(id) { if(confirm('Delete?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
         function adminExportTasks() { /* Standard CSV */ }
 
-        // ================= SALES REP FUNCTIONS (Fixed Stats) =================
+        // ================= SALES REP FUNCTIONS (Reverted to Original) =================
         function getCustomerStats(custId) {
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay() + 1);
-            startOfWeek.setHours(0,0,0,0);
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            let week = 0, month = 0;
-            globalHistory.forEach(h => {
-                if (h.customerId === custId) {
-                    const d = new Date(h.date);
-                    if (d >= startOfWeek) week++;
-                    if (d >= startOfMonth) month++;
-                }
-            });
-            return { week, month };
+            const now = new Date(); const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay() + 1); startOfWeek.setHours(0,0,0,0); const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            let week = 0, month = 0; globalHistory.forEach(h => { if (h.customerId === custId) { const d = new Date(h.date); if (d >= startOfWeek) week++; if (d >= startOfMonth) month++; } }); return { week, month };
         }
-
         function applySidebarFilter() {
-            const mode = document.getElementById('sidebarFilterMode').value;
-            const q = document.querySelector('#taskSidebar input').value.toLowerCase();
+            const mode = document.getElementById('sidebarFilterMode').value; const q = document.querySelector('#taskSidebar input').value.toLowerCase();
             let filtered = myCustomers.filter(c => c.name.toLowerCase().includes(q));
             if (mode === 'missed_week') { filtered = filtered.filter(c => getCustomerStats(c.id).week === 0); } 
             else if (mode === 'missed_month') { filtered = filtered.filter(c => getCustomerStats(c.id).month === 0); }
-            const list = document.getElementById('customerSidebarList');
-            list.innerHTML = '';
+            const list = document.getElementById('customerSidebarList'); list.innerHTML = '';
             filtered.slice(0, 200).forEach(c => {
                 const stats = getCustomerStats(c.id);
                 const item = document.createElement('div');
@@ -514,89 +540,186 @@
                 list.appendChild(item);
             });
         }
-
         function filterSidebarList(val) { applySidebarFilter(); }
         async function loadAssignedTasksForRep() { const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', '==', 'pending').get(); adminTasks = []; snap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() })); }
         function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
-        function renderAcceptTasks() { document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `<div class="bg-white p-4 rounded shadow mb-2 flex justify-between"><div><div class="font-bold">${t.customerName}</div><div class="text-xs">${t.taskDetail}</div></div><button onclick="addTaskToToday('${t.docId}','${t.customerId}')" class="bg-primary text-white px-3 rounded">Add</button></div>`).join(''); document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); }
-        function addTaskToToday(did, cid) { addToTask(cid); db.collection('admin_tasks').doc(did).update({status: 'completed'}); }
+        // 1. Revert to original modal view
+        function renderAcceptTasks() { 
+            const container = document.getElementById('acceptTaskList'); const noMsg = document.getElementById('noAssignedTasksMsg'); container.innerHTML = '';
+            if (adminTasks.length === 0) { noMsg.classList.remove('hidden'); return; } noMsg.classList.add('hidden');
+            adminTasks.forEach(t => { 
+                const div = document.createElement('div'); div.id = `accept-${t.docId}`; div.className = "bg-white p-4 rounded shadow border-l-4 border-primary flex justify-between items-center animate-fade-in"; 
+                div.innerHTML = `<div><div class="font-bold text-gray-800">${t.customerName} <span class="text-xs bg-gray-200 px-1 rounded">${t.customerId}</span></div><div class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-user-tag mr-1"></i> ${t.taskDetail}</div></div><div class="flex space-x-3"><button onclick="addTaskToToday('${t.docId}', '${t.customerId}')" class="bg-gray-100 w-10 h-10 rounded-full hover:bg-green-200 text-green-600 shadow" title="Add to Today"><i class="fa-solid fa-plus"></i></button><button onclick="completeAssignedTask('${t.docId}')" class="bg-primary w-10 h-10 rounded-full hover:bg-blue-800 text-white shadow" title="Mark Done"><i class="fa-solid fa-check"></i></button></div>`; 
+                container.appendChild(div); 
+            }); 
+            document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); 
+        }
+        function addTaskToToday(did, cid) { addToTask(cid); const btn = document.querySelector(`#accept-${did} button`); if(btn) btn.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>'; }
+        async function completeAssignedTask(docId) { if(!confirm("Mark completed?")) return; await db.collection('admin_tasks').doc(docId).update({ status: 'completed', completedDate: new Date().toISOString() }); const el = document.getElementById(`accept-${docId}`); el.classList.add('task-fade-out'); setTimeout(() => { adminTasks = adminTasks.filter(t => t.docId !== docId); renderAcceptTasks(); updateAssignedBadge(); }, 500); }
         async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if(d.exists && d.data().date === new Date().toLocaleDateString()) todayTasks = d.data().tasks || []; }
         async function saveTasksToCloud() { if(!currentUser.isAdmin) await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
         async function loadHistoryFromCloud() { const s = await db.collection('reports').where('repCode', '==', currentUser.code).get(); globalHistory = []; s.forEach(d => globalHistory.push({ docId: d.id, ...d.data() })); }
-        function handleMainSearch(q) { /* Same */ }
+        
+        // 1. Fixed Main Search
+        function handleMainSearch(query) {
+            const container = document.getElementById('mainSearchResult'); if (query.length < 2) { container.classList.add('hidden'); return; }
+            const res = myCustomers.find(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.id.toLowerCase().includes(query.toLowerCase()));
+            container.classList.remove('hidden');
+            if (res) { container.innerHTML = `<div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row justify-between items-center"><div class="mb-4 md:mb-0 text-left"><h3 class="text-xl font-bold text-primary">${res.name}</h3><div class="text-sm text-gray-500 mt-2 space-y-1"><div><i class="fa-solid fa-id-badge mr-2 w-5"></i> ${res.id}</div><div><a href="tel:${res.phone}" class="text-blue-600 hover:underline font-bold"><i class="fa-solid fa-phone mr-2 w-5"></i> ${res.phone}</a></div><div><i class="fa-solid fa-wallet mr-2 w-5"></i> Limit: ${res.credit}</div></div></div><button onclick="window.open('https://wa.me/233550584720?text=${encodeURIComponent(`I want statement of ${res.name} (${res.id})`)}', '_blank')" class="bg-green-100 text-green-700 px-5 py-2 rounded-lg font-bold hover:bg-green-200 transition"><i class="fa-brands fa-whatsapp mr-2"></i> Statement</button></div>`; } else { container.innerHTML = `<div class="bg-white p-4 rounded-xl text-center text-gray-400">Not Found</div>`; }
+        }
+
         function toggleSidebar() { document.getElementById('taskSidebar').classList.toggle('sidebar-closed'); document.getElementById('taskSidebar').classList.toggle('sidebar-open'); if(document.getElementById('taskSidebar').classList.contains('sidebar-open')) { applySidebarFilter(); } }
         function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(myCustomers.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
         window.removeFromTask = function(id) { todayTasks = todayTasks.filter(t => t.id !== id); saveTasksToCloud(); renderTasks(); }
-        function renderTasks() { document.getElementById('todayTaskList').innerHTML = todayTasks.map(t => `<div class="bg-white p-4 rounded shadow border relative"><h4 class="font-bold">${t.name}</h4><button onclick="removeFromTask('${t.id}')" class="absolute top-2 right-2 text-red-500"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
-        function shareTaskToGroup() { /* Same */ }
+        function renderTasks() { document.getElementById('todayTaskList').innerHTML = todayTasks.map(t => `<div class="bg-white p-4 rounded shadow border relative"><h4 class="font-bold">${t.name}</h4><a href="tel:${t.phone}" class="text-xs text-blue-500 hover:underline block my-1"><i class="fa-solid fa-phone"></i> ${t.phone}</a><button onclick="removeFromTask('${t.id}')" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-2"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
+        function shareTaskToGroup() { if(todayTasks.length === 0) return alert("Task list is empty"); let msg = `*${currentUser.name}'s Plan*\n${new Date().toLocaleDateString()}\n------------------\n`; todayTasks.forEach((t, i) => msg += `${i+1}. ${t.name}\n`); window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank'); }
         function openReportModal() { document.getElementById('reportModal').classList.remove('hidden'); document.getElementById('reportRows').innerHTML = ''; if(todayTasks.length) todayTasks.forEach(t => addReportRow(t)); else addReportRow(); }
         function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
-        function addReportRow(d=null) { /* Same */ document.getElementById('reportRows').innerHTML += `<div class="bg-gray-50 p-4 rounded mb-2"><input type="text" value="${d?d.name:''}" class="r-nm w-full p-2 border mb-2"><input type="text" class="r-note w-full p-2 border" placeholder="Outcome"><input type="hidden" class="r-id" value="${d?d.id:''}"></div>`; }
-        async function submitReport() { /* Same */ const batch = db.batch(); document.querySelectorAll('.r-id').forEach(el => { const nm = el.parentElement.querySelector('.r-nm').value; const nt = el.parentElement.querySelector('.r-note').value; if(nm && nt) batch.set(db.collection('reports').doc(), { date: new Date().toISOString(), customerName: nm, note: nt, repCode: currentUser.code, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); }); await batch.commit(); alert('Sent'); closeReportModal(); }
+        function addReportRow(d=null) { document.getElementById('reportRows').innerHTML += `<div class="bg-gray-50 p-4 rounded mb-2 border relative"><button onclick="this.parentElement.remove()" class="absolute right-2 top-2 text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="relative"><label class="text-xs font-bold text-gray-400">CUSTOMER</label><input type="text" value="${d?d.name:''}" class="w-full p-2 border rounded mt-1 bg-white" placeholder="Search..." onkeyup="searchRepCust(this, '${Date.now()+Math.random()}')"><div id="res-${Date.now()+Math.random()}" class="absolute z-10 bg-white w-full max-h-40 overflow-auto shadow hidden rounded border"></div><input type="hidden" class="r-id" value="${d?d.id:''}"><input type="hidden" class="r-nm" value="${d?d.name:''}"></div><div class="md:col-span-2"><label class="text-xs font-bold text-gray-400">OUTCOME</label><input type="text" class="r-note w-full p-2 border rounded mt-1 bg-white" placeholder="Result..."></div></div></div>`; }
+        function searchRepCust(inp, id) { const val = inp.value.toLowerCase(); const box = inp.nextElementSibling; if(val.length<1) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); myCustomers.filter(c=>c.name.toLowerCase().includes(val)).slice(0,5).forEach(c=>{ const d = document.createElement('div'); d.className="p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText=c.name; d.onclick=()=>{ inp.value=c.name; inp.parentElement.querySelector('.r-id').value=c.id; inp.parentElement.querySelector('.r-nm').value=c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
+        async function submitReport() { const batch = db.batch(); let hasData=false; document.querySelectorAll('.r-id').forEach(el => { const nm = el.parentElement.querySelector('.r-nm').value; const nt = el.parentElement.parentElement.parentElement.querySelector('.r-note').value; if(nm && nt) { batch.set(db.collection('reports').doc(), { date: new Date().toISOString(), customerId: el.value, customerName: nm, note: nt, repCode: currentUser.code, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); hasData=true; } }); if(!hasData) return alert("Fill data"); await batch.commit(); alert('Sent'); closeReportModal(); }
 
-        // ================= PRODUCT & PDF FUNCTIONS (PROGRESS BAR & OPEN) =================
+        // ================= 3. & 5. PRODUCT & REQUEST WORKFLOW =================
         function openProductPage() { document.getElementById('productSearchPage').classList.remove('hidden'); }
-        function closeProductPage() { document.getElementById('productSearchPage').classList.add('hidden'); resetExportButton(); }
+        function closeProductPage() { document.getElementById('productSearchPage').classList.add('hidden'); resetRequestButton(); }
+
+        // Real-time listener for current query status
+        function listenForPdfStatus() {
+            if(!currentUser || currentUser.isAdmin) return;
+            // Listen for changes in pdf_requests where repCode matches
+            db.collection('pdf_requests')
+              .where('repCode', '==', currentUser.code)
+              .where('status', 'in', ['pending', 'approved', 'rejected'])
+              .onSnapshot(snapshot => {
+                  snapshot.docChanges().forEach(change => {
+                      if (change.type === "added" || change.type === "modified") {
+                          const data = change.doc.data();
+                          // Update UI if user is looking at this exact search
+                          const currentInput = document.getElementById('productSearchInput').value;
+                          if (data.query === currentInput) {
+                              updateButtonState(data.status);
+                          }
+                      }
+                  });
+              });
+        }
 
         function handleProductSearch(val) {
-            // Reset button if user searches again
-            resetExportButton();
-
+            resetRequestButton(); // Reset to default state on new input
             const container = document.getElementById('productResultsContainer');
             if (!val || val.length < 2) { currentProductResults = []; container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Type to search.</p></div>`; return; }
             
-            const searchTerms = val.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+            // 5. New/Old Search Logic
+            let searchTerms = [];
+            let forceNew = false;
+            let forceOld = false;
+
+            if (val.toLowerCase() === 'new') { forceNew = true; }
+            else if (val.toLowerCase() === 'old') { forceOld = true; }
+            else { searchTerms = val.toLowerCase().split(/\s+/).filter(t => t.length > 0); }
+
             currentProductResults = allProductData.filter(p => {
+                if (forceNew) return p.isNew === '1' && p.stock > 0;
+                if (forceOld) return p.isNew === '2' && p.stock > 0;
+                
                 const productString = (p.name + " " + p.code).toLowerCase();
                 return searchTerms.every(term => productString.includes(term)) && p.stock > 0;
             });
 
             document.getElementById('productCountBadge').innerText = `${currentProductResults.length} found`;
+            
+            // Check if there is an existing active request for this query
+            checkExistingRequest(val);
+
             container.innerHTML = currentProductResults.length === 0 ? `<div class="text-center text-gray-400 mt-10"><p>No results.</p></div>` : currentProductResults.map(p => `
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
-                    <div><div class="font-bold text-gray-800 text-lg">${p.name}</div><div class="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded mt-1">CODE: ${p.code}</div></div>
+                    <div>
+                        <div class="font-bold text-gray-800 text-lg flex items-center">
+                            ${p.name} 
+                            ${p.isNew === '1' ? '<span class="badge-new">NEW</span>' : ''}
+                        </div>
+                        <div class="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded mt-1">CODE: ${p.code}</div>
+                    </div>
                     <div class="text-right"><div class="text-xl font-bold text-primary">${p.price}</div></div>
                 </div>`).join('');
         }
 
-        function resetExportButton() {
-            const btn = document.getElementById('btnExportPDF');
-            const text = document.getElementById('btnExportText');
-            btn.className = "relative overflow-hidden bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[150px]";
-            btn.style.background = ""; // Clear gradient
-            text.innerHTML = '<i class="fa-solid fa-file-pdf mr-2"></i> Export PDF';
+        async function checkExistingRequest(query) {
+            const snap = await db.collection('pdf_requests')
+                .where('repCode', '==', currentUser.code)
+                .where('query', '==', query)
+                .orderBy('timestamp', 'desc')
+                .limit(1)
+                .get();
+            
+            if (!snap.empty) {
+                updateButtonState(snap.docs[0].data().status);
+            }
+        }
+
+        function resetRequestButton() {
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
+            btn.style.background = ""; 
+            btn.onclick = requestPdfApproval;
             btn.disabled = false;
+            text.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
             currentPdfBlobUrl = null;
         }
 
-        function exportProductPDF() {
-            // Step 2: Handle Open Logic if already generated
-            if (currentPdfBlobUrl) {
-                window.open(currentPdfBlobUrl, '_blank');
-                return;
+        function updateButtonState(status) {
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            
+            if (status === 'pending') {
+                btn.className = "bg-gray-400 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px] cursor-not-allowed";
+                text.innerHTML = '<i class="fa-solid fa-clock mr-2"></i> Pending Approval...';
+                btn.onclick = null;
+            } else if (status === 'approved') {
+                btn.className = "relative overflow-hidden bg-accent hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
+                text.innerHTML = '<i class="fa-solid fa-download mr-2"></i> Download PDF';
+                btn.onclick = downloadPdfProcess; // Start download logic
+            } else if (status === 'rejected') {
+                btn.className = "bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px]";
+                text.innerHTML = '<i class="fa-solid fa-ban mr-2"></i> Rejected';
             }
+        }
 
+        function requestPdfApproval() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
+            const query = document.getElementById('productSearchInput').value;
+            
+            // Create Request
+            db.collection('pdf_requests').add({
+                repCode: currentUser.code,
+                repName: currentUser.name,
+                query: query,
+                status: 'pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Optimistic UI update
+            updateButtonState('pending');
+        }
 
-            const btn = document.getElementById('btnExportPDF');
-            const text = document.getElementById('btnExportText');
-            btn.disabled = true; // Prevent double click
+        // 3. Download Process (Simulated Progress -> Open)
+        function downloadPdfProcess() {
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            btn.onclick = null; // Prevent double click
 
-            // 1. Simulate Progress Bar
             let progress = 0;
             const interval = setInterval(() => {
-                progress += 5; // Speed of progress
-                
-                // Visual Update: Gradient Progress Bar
-                // Using CSS Gradient: Blue (Progress) -> Red (Remaining)
-                btn.style.background = `linear-gradient(90deg, #2563eb ${progress}%, #dc2626 ${progress}%)`;
+                progress += 5;
+                btn.style.background = `linear-gradient(90deg, #2563eb ${progress}%, #f59e0b ${progress}%)`; // Blue fills Yellow
                 text.innerText = `${progress}%`;
 
                 if (progress >= 100) {
                     clearInterval(interval);
                     generateAndReadyPDF();
                 }
-            }, 50); // Updates every 50ms
+            }, 30);
         }
 
         function generateAndReadyPDF() {
@@ -611,7 +734,15 @@
             doc.setFontSize(10); doc.text(`Generated by: ${currentUser ? currentUser.name : 'Guest'}`, 14, 28);
             doc.text(`Search: ${query}`, 14, 33); doc.text(`Date: ${now.toLocaleString()}`, 14, 38);
 
-            const tableData = currentProductResults.map(p => [String(p.code), String(p.name), String(p.price)]);
+            // 5. Mark New Arrivals in PDF
+            const isFullNewSearch = (query.toLowerCase() === 'new');
+            const tableData = currentProductResults.map(p => {
+                let pName = p.name;
+                if (!isFullNewSearch && p.isNew === '1') {
+                    pName += " (New Arrivals)";
+                }
+                return [String(p.code), String(pName), String(p.price)];
+            });
 
             doc.autoTable({
                 startY: 45, head: [['Code', 'Product Name', 'Price']], body: tableData,
@@ -619,28 +750,18 @@
                 styles: { fontSize: 10, cellPadding: 3, overflow: 'linebreak' }, columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
             });
 
-            // ★★★ 2. Auto Download (Save to Device) ★★★
-            doc.save(fileName);
+            doc.save(fileName); // Save file
 
-            // ★★★ 3. Prepare for "Open PDF" ★★★
+            // Prepare "Open PDF" button
             const blob = doc.output('blob');
             currentPdfBlobUrl = URL.createObjectURL(blob);
 
-            // Update UI to Green "Open PDF"
-            const btn = document.getElementById('btnExportPDF');
-            const text = document.getElementById('btnExportText');
-            
-            btn.style.background = ""; // Clear gradient, rely on class
-            btn.className = "relative overflow-hidden bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[150px]";
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            btn.style.background = "";
+            btn.className = "bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px]";
             text.innerHTML = '<i class="fa-solid fa-folder-open mr-2"></i> Open PDF';
-            btn.disabled = false; // Re-enable for opening
-
-            // Sync to Admin
-            if(currentUser && !currentUser.isAdmin) {
-                db.collection('export_logs').add({
-                    repCode: currentUser.code, repName: currentUser.name, fileName: fileName, searchQuery: query, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
+            btn.onclick = () => window.open(currentPdfBlobUrl, '_blank');
         }
     </script>
 </body>
