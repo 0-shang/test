@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.1</title>
+    <title>Sales Master Pro 11.3</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -60,6 +61,7 @@
             "background_color": "#1e40af",
             "theme_color": "#1e40af",
             "orientation": "portrait"
+            // "icons": [] // Hidden to avoid white splash screen
         };
         const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
         const link = document.createElement('link'); link.rel = 'manifest'; link.href = URL.createObjectURL(blob); document.head.appendChild(link);
@@ -104,15 +106,16 @@
 
         .badge-new { background-color: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
 
-        /* ★ New Cart FAB Button Style ★ */
-        .cart-fab {
-            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
-            background-color: #f59e0b; color: white; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 70;
-            transition: transform 0.2s;
-        }
+        /* Cart FAB */
+        .cart-fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: #f59e0b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 70; transition: transform 0.2s; }
         .cart-fab:active { transform: scale(0.9); }
+
+        /* Calendar Styles */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e5e7eb; border: 1px solid #e5e7eb; }
+        .calendar-header { background-color: #1e3a8a; color: white; padding: 8px 0; text-align: center; font-size: 0.75rem; font-weight: bold; }
+        .calendar-day { background-color: white; min-height: 80px; padding: 4px; display: flex; flex-direction: column; justify-content: flex-start; }
+        .calendar-date-num { font-size: 0.8rem; font-weight: bold; color: #374151; margin-bottom: 4px; }
+        .cal-event { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; text-align: center; color: white; line-height: 1.2; }
     </style>
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
@@ -155,7 +158,6 @@
                 <button onclick="switchAdminTab('assign')" id="btnTabAssign" class="flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent">Assign</button>
                 <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Tasks</button>
                 <button onclick="switchAdminTab('reports')" id="btnTabReports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Reports</button>
-                <!-- ★ Added Attendance Tab ★ -->
                 <button onclick="switchAdminTab('attendance')" id="btnTabAttendance" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Attendance</button>
                 <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Req Logs</button>
             </div>
@@ -230,36 +232,59 @@
                 </div>
             </div>
 
-            <!-- ★★★ New Admin Attendance Tab ★★★ -->
+            <!-- ★★★ Updated Admin Attendance Tab (Calendar) ★★★ -->
             <div id="adminTabAttendance" class="max-w-6xl mx-auto hidden space-y-4">
                 <div class="bg-white p-4 rounded shadow mb-4">
                     <div class="flex flex-col md:flex-row gap-3">
                         <div class="w-full md:w-auto">
                             <label class="text-[10px] text-gray-500 font-bold block mb-1">MONTH</label>
-                            <input type="month" id="adminAttMonth" class="w-full p-2 border rounded text-sm" onchange="loadAdminAttendance()">
+                            <input type="month" id="adminAttMonth" class="w-full p-2 border rounded text-sm bg-gray-50">
                         </div>
                         <div class="w-full md:w-auto">
                             <label class="text-[10px] text-gray-500 font-bold block mb-1">REP</label>
-                            <select id="adminAttRep" class="w-full p-2 border rounded text-sm" onchange="loadAdminAttendance()">
-                                <option value="all">All Reps</option>
+                            <select id="adminAttRep" class="w-full p-2 border rounded text-sm bg-gray-50">
+                                <option value="">Select Rep (Required)</option>
                             </select>
                         </div>
                         <div class="w-full md:w-auto flex items-end">
-                            <button onclick="loadAdminAttendance()" class="bg-primary text-white px-4 py-2 rounded text-sm font-bold shadow w-full">
-                                <i class="fa-solid fa-sync mr-1"></i> Refresh
+                            <button onclick="loadAdminAttendance()" class="bg-primary text-white px-6 py-2 rounded text-sm font-bold shadow w-full">
+                                <i class="fa-solid fa-magnifying-glass mr-1"></i> QUERY
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <!-- Pending Requests -->
-                    <h3 class="font-bold text-gray-700 border-l-4 border-orange-500 pl-2">Pending Leave Requests</h3>
-                    <div id="adminLeaveRequests" class="space-y-2"></div>
-                    
-                    <!-- Logs -->
-                    <h3 class="font-bold text-gray-700 border-l-4 border-blue-500 pl-2 mt-6">Attendance Log (Clock-in & Approved Leave)</h3>
-                    <div id="adminAttLog" class="bg-white rounded shadow overflow-hidden"></div>
+                <div id="adminCalendarContainer" class="hidden">
+                     <h3 class="font-bold text-gray-700 mb-2 flex justify-between items-center">
+                        <span id="calTitle">Attendance Calendar</span>
+                        <div class="text-xs font-normal">
+                            <span class="inline-block w-3 h-3 bg-green-500 rounded-sm mr-1"></span>Work
+                            <span class="inline-block w-3 h-3 bg-orange-500 rounded-sm ml-2 mr-1"></span>Leave
+                        </div>
+                     </h3>
+                     <div class="bg-white rounded shadow overflow-hidden">
+                         <div class="calendar-grid">
+                             <div class="calendar-header">SUN</div>
+                             <div class="calendar-header">MON</div>
+                             <div class="calendar-header">TUE</div>
+                             <div class="calendar-header">WED</div>
+                             <div class="calendar-header">THU</div>
+                             <div class="calendar-header">FRI</div>
+                             <div class="calendar-header">SAT</div>
+                             <!-- Days will be injected here -->
+                             <div id="calendarDays" class="col-span-7 grid grid-cols-7 gap-1 bg-gray-200 border-t border-gray-200"></div>
+                         </div>
+                     </div>
+                </div>
+                
+                <div id="adminAttEmptyState" class="text-center text-gray-400 py-10">
+                    <i class="fa-solid fa-filter text-4xl mb-3"></i>
+                    <p>Select Month and Rep, then click Query.</p>
+                </div>
+
+                <div class="space-y-4 mt-8 border-t pt-4">
+                     <h3 class="font-bold text-gray-700 border-l-4 border-orange-500 pl-2">Pending Leave Requests</h3>
+                     <div id="adminLeaveRequests" class="space-y-2"></div>
                 </div>
             </div>
 
@@ -285,11 +310,9 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <!-- ★ Attendance Button ★ -->
                     <button onclick="openAttendanceModal()" class="bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs font-bold mr-1 border border-blue-200">
                         <i class="fa-solid fa-calendar-check mr-1"></i> Check In
                     </button>
-                    
                     <button onclick="toggleAssignedModal()" class="relative bg-gray-100 hover:bg-blue-50 text-primary p-2 rounded-lg transition mr-2">
                         <i class="fa-solid fa-bell text-xl"></i>
                         <span id="assignedCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
@@ -351,7 +374,7 @@
         </div>
     </div>
 
-    <!-- ★ New Attendance Modal ★ -->
+    <!-- Attendance Modal -->
     <div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-60 z-[90] hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-xl shadow-2xl flex flex-col overflow-hidden m-4">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
@@ -403,7 +426,7 @@
         </div>
     </div>
 
-    <!-- D. Product List & Request PDF -->
+    <!-- Product List & Request PDF -->
     <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col h-screen animate-fade-in">
         <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center shrink-0">
             <h2 class="text-xl font-bold flex items-center"><i class="fa-solid fa-box-open mr-2"></i> Product List</h2>
@@ -436,7 +459,6 @@
                 </div>
             </div>
             
-            <!-- ★ New Cart FAB ★ -->
             <button onclick="openCartModal()" class="bg-accent hover:bg-yellow-600 cart-fab">
                 <div class="relative">
                     <i class="fa-solid fa-cart-shopping text-2xl"></i>
@@ -455,7 +477,7 @@
         </div>
     </div>
 
-    <!-- ★ New Cart Modal ★ -->
+    <!-- Cart Modal -->
     <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-2xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in m-4">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
@@ -536,9 +558,7 @@
         let globalHistory = []; 
         let adminTasks = [];
         let adminExportLogs = []; 
-        
-        // New Globals for Cart
-        let cartItems = []; // {code, name, price, qty}
+        let cartItems = []; 
         let cartCustomer = null; 
 
         const repDirectory = {
@@ -553,7 +573,7 @@
         try {
             const savedUser = localStorage.getItem('salesMasterUser');
             if (savedUser) {
-                // UI could be optimized here but logic is in window.onload
+                // Pre-check logic if needed
             }
         } catch(e) {}
 
@@ -605,7 +625,7 @@
                     renderAdminTasks(); 
                     renderAdminReports();
                     renderAdminRequests();
-                    loadAdminAttendance(); // NEW
+                    // Don't auto-load attendance anymore, wait for query
                 } else { 
                     await loadTasksFromCloud(); 
                     await loadHistoryFromCloud(); 
@@ -617,29 +637,51 @@
             } catch (e) { console.error(e); } 
         }
 
+        // CSV Loading Logic - Expanded for readability and stability
         function loadCustomersCSV() { 
-            Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
-                allSalesData = results.data.map(item => {
-                    return { 
-                        id: (item.Code||item.code||"").trim(), 
-                        name: (item.Name||item.name||"Unknown").trim(), 
-                        csvRepName: (item.RepName||item.repname||"Sales").trim(), 
-                        repCode: (item.Limit||item.limit||"").trim().toUpperCase(), 
-                        phone: (item.Phone||item.phone||"").trim(), 
-                        credit: (item.Credit||item.credit||"0").trim() 
-                    };
-                }); 
-                if(currentUser && !currentUser.isAdmin) {
-                    if (repDirectory[currentUser.code]) {
-                        myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
-                    } else {
-                        myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
+            Papa.parse("customers.csv", { 
+                download: true, 
+                header: true, 
+                skipEmptyLines: true, 
+                complete: function(results) { 
+                    allSalesData = results.data.map(item => {
+                        return { 
+                            id: (item.Code||item.code||"").trim(), 
+                            name: (item.Name||item.name||"Unknown").trim(), 
+                            csvRepName: (item.RepName||item.repname||"Sales").trim(), 
+                            repCode: (item.Limit||item.limit||"").trim().toUpperCase(), 
+                            phone: (item.Phone||item.phone||"").trim(), 
+                            credit: (item.Credit||item.credit||"0").trim() 
+                        };
+                    }); 
+                    if(currentUser && !currentUser.isAdmin) {
+                        if (repDirectory[currentUser.code]) {
+                            myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
+                        } else {
+                            myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
+                        }
                     }
                 }
-            }}); 
+            }); 
         }
         
-        function loadProductCSV() { Papa.parse("products.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { allProductData = results.data.map(item => ({ code: (item.Code||item.code||"").trim(), name: (item.Name||item.name||"").trim(), stock: parseFloat(item.Stock||item.stock||"0"), price: (item.Price||item.price||"0").trim(), promo: (item.PromoPrice||item.promoprice||"").trim(), isNew: (item.New||item.new||"0").trim() })); } }); }
+        function loadProductCSV() { 
+            Papa.parse("products.csv", { 
+                download: true, 
+                header: true, 
+                skipEmptyLines: true, 
+                complete: function(results) { 
+                    allProductData = results.data.map(item => ({ 
+                        code: (item.Code||item.code||"").trim(), 
+                        name: (item.Name||item.name||"").trim(), 
+                        stock: parseFloat(item.Stock||item.stock||"0"), 
+                        price: (item.Price||item.price||"0").trim(), 
+                        promo: (item.PromoPrice||item.promoprice||"").trim(), 
+                        isNew: (item.New||item.new||"0").trim() 
+                    })); 
+                } 
+            }); 
+        }
 
         async function performLogin(silent = false) { 
             const code = document.getElementById('loginRepCode').value.trim(); 
@@ -719,7 +761,7 @@
             const logSnap = await db.collection('export_logs').orderBy('timestamp', 'desc').limit(200).get();
             adminExportLogs = []; logSnap.forEach(doc => adminExportLogs.push({ docId: doc.id, ...doc.data() }));
         }
-        function switchAdminTab(tab) { ['assign','history','reports','attendance','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } if(tab === 'attendance') { initAdminAttFilters(); loadAdminAttendance(); } }
+        function switchAdminTab(tab) { ['assign','history','reports','attendance','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } if(tab === 'attendance') { initAdminAttFilters(); } }
         function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
         
         function renderAdminTasks() { 
@@ -773,20 +815,21 @@
         async function adminApproveRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'approved'}); renderAdminRequests(); }
         async function adminRejectRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'rejected'}); renderAdminRequests(); }
 
-        // ★★★ ADMIN ATTENDANCE LOGIC ★★★
+        // ★★★ ADMIN ATTENDANCE LOGIC (Calendar) ★★★
         function initAdminAttFilters() { 
             const s = document.getElementById('adminAttRep'); 
-            if(s.options.length>1)return; 
+            if(s.options.length>1) return; 
             for(const [c,n] of Object.entries(repDirectory)) s.innerHTML+=`<option value="${c}">${n}</option>`; 
-            document.getElementById('adminAttMonth').valueAsDate = new Date(); 
+            document.getElementById('adminAttMonth').value = new Date().toISOString().slice(0,7);
         }
         
         async function loadAdminAttendance() {
-            const m = document.getElementById('adminAttMonth').value; 
+            const m = document.getElementById('adminAttMonth').value; // YYYY-MM
             const rep = document.getElementById('adminAttRep').value;
-            if(!m) return;
             
-            // 1. Pending Leave Requests
+            if(!m || !rep) return alert("Please select both Month and Rep to query.");
+            
+            // Show Pending Requests
             const pendSnap = await db.collection('leave_requests').where('status', '==', 'pending').get();
             const pendCont = document.getElementById('adminLeaveRequests');
             pendCont.innerHTML = '';
@@ -807,34 +850,80 @@
                     </div>`;
             });
 
-            // 2. Logs
-            let logs = [];
+            // Fetch Data for Calendar
             const startStr = m + "-01";
-            const endStr = m + "-31"; 
+            const endStr = m + "-31";
+            let logs = [];
             
-            // Clock Ins
+            // Work logs
             const logSnap = await db.collection('attendance_logs')
+                .where('repCode', '==', rep)
                 .where('dateString', '>=', startStr).where('dateString', '<=', endStr).get();
-            logSnap.forEach(d => logs.push({...d.data(), type: 'Clock In'}));
+            logSnap.forEach(d => logs.push({...d.data(), type: 'work'}));
 
-            // Approved Leaves
+            // Leave logs
             const leaveSnap = await db.collection('leave_requests')
-                .where('startDate', '>=', startStr).where('status', '==', 'approved').get();
-            leaveSnap.forEach(d => logs.push({...d.data(), type: 'Leave', dateString: d.startDate}));
+                .where('repCode', '==', rep)
+                .where('status', '==', 'approved')
+                .where('startDate', '>=', startStr).get();
+            leaveSnap.forEach(d => logs.push({...d.data(), type: 'leave'}));
 
-            if(rep !== 'all') logs = logs.filter(l => l.repCode === rep);
+            renderCalendar(m, logs);
+        }
+
+        function renderCalendar(monthStr, data) {
+            document.getElementById('adminAttEmptyState').classList.add('hidden');
+            document.getElementById('adminCalendarContainer').classList.remove('hidden');
             
-            logs.sort((a,b) => a.dateString.localeCompare(b.dateString));
+            const [year, month] = monthStr.split('-').map(Number);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const startDay = new Date(year, month - 1, 1).getDay(); // 0 = Sun
+            
+            const container = document.getElementById('calendarDays');
+            container.innerHTML = '';
+            
+            // Empty cells before start of month
+            for(let i=0; i<startDay; i++) {
+                container.innerHTML += `<div class="bg-gray-100 h-20"></div>`;
+            }
 
-            const logCont = document.getElementById('adminAttLog');
-            let html = '<table class="min-w-full text-xs text-left"><thead class="bg-gray-200"><tr><th class="p-2">Date</th><th class="p-2">Rep</th><th class="p-2">Type</th><th class="p-2">Detail</th></tr></thead><tbody>';
-            logs.forEach(l => {
-                const detail = l.type==='Clock In' ? `Lat:${l.location?.latitude?.toFixed(2)}, Lng:${l.location?.longitude?.toFixed(2)}` : `${l.duration} Days (${l.reason})`;
-                const color = l.type==='Leave' ? 'text-orange-600 font-bold' : 'text-green-600';
-                html += `<tr class="border-b"><td class="p-2">${l.dateString}</td><td class="p-2 font-bold">${l.repName}</td><td class="p-2 ${color}">${l.type}</td><td class="p-2 text-gray-500">${detail}</td></tr>`;
-            });
-            html += '</tbody></table>';
-            logCont.innerHTML = logs.length ? html : '<div class="p-4 text-center text-gray-400">No records found.</div>';
+            // Days
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateKey = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                
+                // Find records for this day
+                const daysEvents = data.filter(item => {
+                    if(item.type === 'work') return item.dateString === dateKey;
+                    if(item.type === 'leave') return item.startDate === dateKey; // Simplified
+                    return false;
+                });
+
+                let eventHtml = '';
+                daysEvents.forEach(ev => {
+                    if(ev.type === 'work') {
+                        // Extract time from timestamp
+                        let timeStr = "??:??";
+                        if(ev.timestamp) {
+                            const dateObj = new Date(ev.timestamp.seconds * 1000);
+                            timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        }
+                        const lat = ev.location?.latitude;
+                        const lng = ev.location?.longitude;
+                        eventHtml += `<div class="cal-event bg-green-500">
+                                        <div>${timeStr}</div>
+                                        <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="underline text-[9px] text-white font-bold">Map</a>
+                                      </div>`;
+                    } else {
+                        eventHtml += `<div class="cal-event bg-orange-500">Leave</div>`;
+                    }
+                });
+
+                container.innerHTML += `
+                    <div class="calendar-day">
+                        <div class="calendar-date-num">${d}</div>
+                        <div class="w-full">${eventHtml}</div>
+                    </div>`;
+            }
         }
 
         async function updateLeaveStatus(id, status) {
@@ -843,7 +932,6 @@
             loadAdminAttendance();
         }
 
-        // 1. Fixed: Assign Row uses Hardcoded Directory
         function addAssignRow() { 
             const container = document.getElementById('assignRowsContainer'); 
             const rowId = Date.now() + Math.random(); 
@@ -1120,6 +1208,7 @@
               });
         }
 
+        // ★ Fixed Search Function ★
         function handleProductSearch(val) {
             const container = document.getElementById('productResultsContainer');
             if (!val || val.length < 2) { 
@@ -1146,7 +1235,6 @@
                  return;
             }
 
-            // ★ Render with Add/Remove buttons for Cart ★
             container.innerHTML = currentProductResults.map(p => {
                 const inCart = cartItems.find(i => i.code === p.code);
                 const qty = inCart ? inCart.qty : 0;
@@ -1194,7 +1282,6 @@
                     item = { 
                         code: code, 
                         name: product.name, 
-                        // Strip currency symbol if present for math
                         price: parseFloat(finalPrice.replace(/[^0-9.]/g, '')), 
                         qty: 0 
                     };
@@ -1386,3 +1473,4 @@
     </script>
 </body>
 </html>
+```
