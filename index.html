@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.0</title>
+    <title>Sales Master Pro 11.1</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -60,7 +60,6 @@
             "background_color": "#1e40af",
             "theme_color": "#1e40af",
             "orientation": "portrait"
-            // "icons": [] // Hidden splash screen
         };
         const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
         const link = document.createElement('link'); link.rel = 'manifest'; link.href = URL.createObjectURL(blob); document.head.appendChild(link);
@@ -71,34 +70,54 @@
     <style>
         body { background-color: #1e40af; overflow: hidden; } 
         body.loaded { background-color: #f3f4f6; } 
+
         #loginSection { background-color: #1e40af; } 
-        .login-card { background: white; border-radius: 12px; padding: 30px 25px; width: 90%; max-width: 350px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-        .login-input { width: 100%; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; font-size: 14px; outline: none; transition: border-color 0.2s; background-color: #fff; }
+
+        .login-card {
+            background: white; border-radius: 12px; padding: 30px 25px; width: 90%; max-width: 350px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center;
+        }
+        .login-input {
+            width: 100%; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; font-size: 14px;
+            outline: none; transition: border-color 0.2s; background-color: #fff;
+        }
         .login-input:focus { border-color: #1e40af; }
         .btn-loading { opacity: 0.7; cursor: not-allowed; pointer-events: none; }
+
         .sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-closed { transform: translateX(100%); }
         .sidebar-open { transform: translateX(0); }
+        
         .req-sidebar { transition: transform 0.3s ease-in-out; }
         .req-sidebar-closed { transform: translateX(100%); }
         .req-sidebar-open { transform: translateX(0); }
+
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
+        
         #draggableListBtn { transition: box-shadow 0.2s; box-shadow: -2px 2px 8px rgba(0,0,0,0.2); touch-action: none; z-index: 50; }
         #draggableListBtn:active { opacity: 0.9; }
+
         .pull-indicator { height: 0; overflow: hidden; transition: height 0.2s; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #6b7280; font-size: 0.8rem; }
         .scroll-container { -webkit-overflow-scrolling: touch; }
+
         .badge-new { background-color: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
-        
-        /* Cart FAB */
-        .cart-fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; bg-primary; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 70; transition: transform 0.2s; }
+
+        /* ★ New Cart FAB Button Style ★ */
+        .cart-fab {
+            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
+            background-color: #f59e0b; color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 70;
+            transition: transform 0.2s;
+        }
         .cart-fab:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
 
-    <!-- A. 登录界面 -->
+    <!-- A. Login Section -->
     <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="login-card">
             <div class="text-[#1e3a8a] text-5xl mb-4"><i class="fa-solid fa-user-shield"></i></div>
@@ -113,12 +132,14 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
                     <input type="password" id="loginPassword" class="login-input" placeholder="••••">
                 </div>
-                <button id="btnLogin" onclick="performLogin()" class="w-full bg-[#1e3a8a] text-white font-bold py-3 rounded-md shadow hover:bg-blue-800 transition mt-2 flex justify-center items-center">LOGIN</button>
+                <button id="btnLogin" onclick="performLogin()" class="w-full bg-[#1e3a8a] text-white font-bold py-3 rounded-md shadow hover:bg-blue-800 transition mt-2 flex justify-center items-center">
+                    LOGIN
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- B. 管理员界面 -->
+    <!-- B. Admin Section -->
     <div id="adminSection" class="flex flex-col h-full hidden bg-gray-100">
         <header class="bg-primary text-white shadow-md z-20">
             <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -134,6 +155,7 @@
                 <button onclick="switchAdminTab('assign')" id="btnTabAssign" class="flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent">Assign</button>
                 <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Tasks</button>
                 <button onclick="switchAdminTab('reports')" id="btnTabReports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Reports</button>
+                <!-- ★ Added Attendance Tab ★ -->
                 <button onclick="switchAdminTab('attendance')" id="btnTabAttendance" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Attendance</button>
                 <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Req Logs</button>
             </div>
@@ -157,10 +179,12 @@
 
             <div id="adminTabHistory" class="max-w-5xl mx-auto hidden space-y-4">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-2">
-                    <input type="text" id="adminTaskFilter" placeholder="Search tasks..." class="p-2 border rounded w-full md:w-1/3" onkeyup="renderAdminTasks()">
+                    <input type="text" id="adminTaskFilter" placeholder="Search tasks to view..." class="p-2 border rounded w-full md:w-1/3" onkeyup="renderAdminTasks()">
                     <button onclick="adminExportTasks()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold shadow"><i class="fa-solid fa-file-csv mr-2"></i> Export CSV</button>
                 </div>
-                <div id="adminTaskList" class="space-y-3"><div class="text-gray-400 text-center text-xs mt-10">Enter search term.</div></div>
+                <div id="adminTaskList" class="space-y-3">
+                    <div class="text-gray-400 text-center text-xs mt-10">Enter search term to view tasks.</div>
+                </div>
             </div>
 
             <div id="adminTabReports" class="max-w-6xl mx-auto hidden space-y-4">
@@ -178,18 +202,35 @@
                         </div>
                         <div class="w-full flex-1">
                             <label class="text-[10px] text-gray-500 font-bold block mb-1">CUSTOMER NAME</label>
-                            <div class="relative"><input type="text" id="adminReportTextFilter" placeholder="Search report..." class="w-full p-2 pl-8 border rounded text-sm" onkeyup="renderAdminReports()"><i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i></div>
+                            <div class="relative">
+                                <input type="text" id="adminReportTextFilter" placeholder="Search report..." class="w-full p-2 pl-8 border rounded text-sm" onkeyup="renderAdminReports()">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            </div>
                         </div>
-                        <button onclick="adminExportReports()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold shadow w-full md:w-auto"><i class="fa-solid fa-file-csv"></i> Export</button>
+                        <button onclick="adminExportReports()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold shadow w-full md:w-auto">
+                            <i class="fa-solid fa-file-csv"></i> Export
+                        </button>
                     </div>
                 </div>
                 <div class="hidden md:block bg-white rounded shadow overflow-hidden">
-                    <table class="min-w-full text-sm text-left"><thead class="bg-gray-200 text-gray-700 uppercase font-bold text-xs"><tr><th class="p-3">Date</th><th class="p-3">Rep</th><th class="p-3">Customer</th><th class="p-3">Note</th></tr></thead><tbody id="adminReportTableBody"></tbody></table>
+                    <table class="min-w-full text-sm text-left">
+                        <thead class="bg-gray-200 text-gray-700 uppercase font-bold text-xs">
+                            <tr>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Rep</th>
+                                <th class="p-3">Customer</th>
+                                <th class="p-3">Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminReportTableBody"></tbody>
+                    </table>
                 </div>
-                <div id="adminReportMobileList" class="md:hidden space-y-3"><div class="text-gray-400 text-center text-xs mt-4">Apply filters.</div></div>
+                <div id="adminReportMobileList" class="md:hidden space-y-3">
+                    <div class="text-gray-400 text-center text-xs mt-4">Apply filters to view reports.</div>
+                </div>
             </div>
 
-            <!-- ★★★ ADMIN ATTENDANCE TAB ★★★ -->
+            <!-- ★★★ New Admin Attendance Tab ★★★ -->
             <div id="adminTabAttendance" class="max-w-6xl mx-auto hidden space-y-4">
                 <div class="bg-white p-4 rounded shadow mb-4">
                     <div class="flex flex-col md:flex-row gap-3">
@@ -204,26 +245,34 @@
                             </select>
                         </div>
                         <div class="w-full md:w-auto flex items-end">
-                            <button onclick="loadAdminAttendance()" class="bg-primary text-white px-4 py-2 rounded text-sm font-bold shadow w-full"><i class="fa-solid fa-sync"></i> Refresh</button>
+                            <button onclick="loadAdminAttendance()" class="bg-primary text-white px-4 py-2 rounded text-sm font-bold shadow w-full">
+                                <i class="fa-solid fa-sync mr-1"></i> Refresh
+                            </button>
                         </div>
                     </div>
                 </div>
+
                 <div class="space-y-4">
+                    <!-- Pending Requests -->
                     <h3 class="font-bold text-gray-700 border-l-4 border-orange-500 pl-2">Pending Leave Requests</h3>
                     <div id="adminLeaveRequests" class="space-y-2"></div>
                     
+                    <!-- Logs -->
                     <h3 class="font-bold text-gray-700 border-l-4 border-blue-500 pl-2 mt-6">Attendance Log (Clock-in & Approved Leave)</h3>
                     <div id="adminAttLog" class="bg-white rounded shadow overflow-hidden"></div>
                 </div>
             </div>
 
             <div id="adminTabExports" class="max-w-6xl mx-auto hidden space-y-4">
-                <div class="bg-white p-4 rounded shadow mb-4"><h3 class="font-bold text-gray-700 mb-2">PDF Approval Queue</h3><div id="adminRequestList" class="space-y-2"></div></div>
+                <div class="bg-white p-4 rounded shadow mb-4">
+                    <h3 class="font-bold text-gray-700 mb-2">PDF Approval Queue</h3>
+                    <div id="adminRequestList" class="space-y-2"></div>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- C. 销售界面 -->
+    <!-- C. Sales Rep Section -->
     <div id="appSection" class="flex flex-col h-full hidden bg-gray-100">
         <header class="bg-white border-b border-gray-200 shadow-sm z-20">
             <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -237,7 +286,9 @@
                 </div>
                 <div class="flex items-center space-x-2">
                     <!-- ★ Attendance Button ★ -->
-                    <button onclick="openAttendanceModal()" class="bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs font-bold mr-1"><i class="fa-solid fa-calendar-check mr-1"></i> Check In</button>
+                    <button onclick="openAttendanceModal()" class="bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs font-bold mr-1 border border-blue-200">
+                        <i class="fa-solid fa-calendar-check mr-1"></i> Check In
+                    </button>
                     
                     <button onclick="toggleAssignedModal()" class="relative bg-gray-100 hover:bg-blue-50 text-primary p-2 rounded-lg transition mr-2">
                         <i class="fa-solid fa-bell text-xl"></i>
@@ -251,23 +302,27 @@
         <div class="flex flex-1 overflow-hidden relative">
             <main id="salesMain" class="flex-1 overflow-y-auto p-4 md:p-8 relative bg-gray-50">
                 <div id="salesPullIndicator" class="pull-indicator"><i class="fa-solid fa-arrow-down mr-2"></i> Pull to refresh</div>
+
                 <div class="max-w-4xl mx-auto mt-2">
                     <div class="relative max-w-2xl mx-auto">
-                        <input type="text" id="mainSearchInput" placeholder="Search Customer..." class="w-full pl-6 pr-14 py-4 rounded-full shadow-lg border-none focus:ring-2 focus:ring-accent outline-none text-lg" oninput="handleMainSearch(this.value)">
+                        <input type="text" id="mainSearchInput" placeholder="Search Customer Name or Code..." class="w-full pl-6 pr-14 py-4 rounded-full shadow-lg border-none focus:ring-2 focus:ring-accent outline-none text-lg" oninput="handleMainSearch(this.value)">
                         <i class="fa-solid fa-search absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                     </div>
                     <div id="mainSearchResult" class="mt-6 hidden max-w-2xl mx-auto"></div>
                 </div>
+
                 <div class="max-w-5xl mx-auto mt-8 pb-24">
                     <div class="flex justify-between items-center mb-4">
                         <button onclick="toggleSidebar()" class="flex items-center space-x-2 group hover:opacity-80 transition">
                             <h3 class="text-lg font-bold text-gray-800 border-l-4 border-accent pl-3 group-hover:text-primary">Today's Task</h3>
                             <span class="text-xs bg-primary text-white px-2 py-1 rounded-full"><i class="fa-solid fa-plus mr-1"></i> Add</span>
                         </button>
+                        
                         <button onclick="shareTaskToGroup()" class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded font-bold shadow flex items-center"><i class="fa-brands fa-whatsapp mr-1"></i> Share Plan</button>
                     </div>
                     <div id="todayTaskList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr"></div>
                 </div>
+
                 <div class="fixed bottom-8 right-8 z-10">
                     <button onclick="openReportModal()" class="bg-primary hover:bg-blue-900 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition transform hover:scale-110"><i class="fa-solid fa-pen-to-square text-2xl"></i></button>
                 </div>
@@ -279,17 +334,24 @@
             </button>
 
             <div id="taskSidebar" class="sidebar sidebar-closed fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-40 flex flex-col">
-                <div class="p-4 bg-primary text-white flex justify-between items-center"><h3 class="font-bold">Select Customers</h3><button onclick="toggleSidebar()"><i class="fa-solid fa-times text-lg"></i></button></div>
+                <div class="p-4 bg-primary text-white flex justify-between items-center">
+                    <h3 class="font-bold">Select Customers</h3>
+                    <button onclick="toggleSidebar()"><i class="fa-solid fa-times text-lg"></i></button>
+                </div>
                 <div class="p-3 bg-gray-100 border-b space-y-2">
                     <input type="text" placeholder="Filter list..." class="w-full p-2 text-sm border rounded" oninput="filterSidebarList(this.value)">
-                    <select id="sidebarFilterMode" onchange="applySidebarFilter()" class="w-full p-2 text-sm border rounded bg-white font-bold text-gray-600"><option value="all">Show All</option><option value="missed_week">⚠️ Not Visited This Week</option><option value="missed_month">⛔ Not Visited This Month</option></select>
+                    <select id="sidebarFilterMode" onchange="applySidebarFilter()" class="w-full p-2 text-sm border rounded bg-white font-bold text-gray-600">
+                        <option value="all">Show All Customers</option>
+                        <option value="missed_week">⚠️ Not Visited This Week</option>
+                        <option value="missed_month">⛔ Not Visited This Month</option>
+                    </select>
                 </div>
                 <div id="customerSidebarList" class="flex-1 overflow-y-auto p-2 space-y-2 pb-20"></div>
             </div>
         </div>
     </div>
 
-    <!-- ★ Attendance Modal (Rep Side) ★ -->
+    <!-- ★ New Attendance Modal ★ -->
     <div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-60 z-[90] hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-xl shadow-2xl flex flex-col overflow-hidden m-4">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
@@ -318,19 +380,30 @@
                 <div class="border-t pt-4">
                     <h4 class="font-bold text-gray-700 mb-3">Request Leave</h4>
                     <div class="space-y-3">
-                        <input type="date" id="leaveDate" class="w-full p-2 border rounded">
-                        <div class="flex space-x-2">
-                            <input type="number" id="leaveDuration" placeholder="Days" class="w-1/3 p-2 border rounded">
-                            <input type="text" id="leaveReason" placeholder="Reason..." class="w-2/3 p-2 border rounded">
+                        <div>
+                            <label class="text-xs font-bold text-gray-400">DATE</label>
+                            <input type="date" id="leaveDate" class="w-full p-2 border rounded">
                         </div>
-                        <button onclick="submitLeaveRequest()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded shadow">Submit Request</button>
+                        <div class="flex space-x-2">
+                            <div class="w-1/3">
+                                <label class="text-xs font-bold text-gray-400">DAYS</label>
+                                <input type="number" id="leaveDuration" placeholder="1" class="w-full p-2 border rounded">
+                            </div>
+                            <div class="w-2/3">
+                                <label class="text-xs font-bold text-gray-400">REASON</label>
+                                <input type="text" id="leaveReason" placeholder="Reason..." class="w-full p-2 border rounded">
+                            </div>
+                        </div>
+                        <button onclick="submitLeaveRequest()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded shadow">
+                            Submit Request
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- D. Product List (Modified with Cart) -->
+    <!-- D. Product List & Request PDF -->
     <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col h-screen animate-fade-in">
         <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center shrink-0">
             <h2 class="text-xl font-bold flex items-center"><i class="fa-solid fa-box-open mr-2"></i> Product List</h2>
@@ -349,6 +422,7 @@
                                oninput="handleProductSearch(this.value)">
                         <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                     </div>
+                    
                     <button id="btnRequestPDF" onclick="requestPdfApproval()" class="relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]">
                         <span id="btnRequestText"><i class="fa-solid fa-paper-plane mr-2"></i> Request PDF</span>
                     </button>
@@ -356,10 +430,13 @@
             </div>
 
             <div id="productResultsContainer" class="flex-1 overflow-y-auto min-h-0 space-y-3 pb-24 scroll-container">
-                <div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Enter keywords.</p></div>
+                <div class="text-center text-gray-400 mt-10">
+                    <i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i>
+                    <p>Enter keywords to search.</p>
+                </div>
             </div>
             
-            <!-- ★ Cart FAB ★ -->
+            <!-- ★ New Cart FAB ★ -->
             <button onclick="openCartModal()" class="bg-accent hover:bg-yellow-600 cart-fab">
                 <div class="relative">
                     <i class="fa-solid fa-cart-shopping text-2xl"></i>
@@ -368,20 +445,24 @@
             </button>
         </div>
 
-        <!-- Request Sidebar -->
+        <!-- Request History Sidebar -->
         <div id="requestSidebar" class="req-sidebar req-sidebar-closed fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] flex flex-col">
-            <div class="p-4 bg-primary text-white flex justify-between items-center"><h3 class="font-bold">History</h3><button onclick="toggleRequestSidebar()"><i class="fa-solid fa-times text-lg"></i></button></div>
+            <div class="p-4 bg-primary text-white flex justify-between items-center">
+                <h3 class="font-bold">Request History</h3>
+                <button onclick="toggleRequestSidebar()"><i class="fa-solid fa-times text-lg"></i></button>
+            </div>
             <div id="myRequestList" class="flex-1 overflow-y-auto p-2 space-y-2 pb-20 bg-gray-50"></div>
         </div>
     </div>
 
-    <!-- ★ Cart Modal ★ -->
+    <!-- ★ New Cart Modal ★ -->
     <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-2xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in m-4">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
                 <h3 class="font-bold text-lg"><i class="fa-solid fa-cart-shopping mr-2"></i>Order Builder</h3>
                 <button onclick="closeCartModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
+            <!-- Cart Customer Selection -->
             <div class="p-4 bg-gray-50 border-b">
                 <div id="cartCustomerSection">
                     <label class="text-xs font-bold text-gray-500 mb-1 block">CUSTOMER (Max 1)</label>
@@ -396,9 +477,11 @@
                     </div>
                 </div>
             </div>
+            <!-- Cart Items -->
             <div class="flex-1 overflow-y-auto p-4 space-y-2" id="cartItemsList">
                 <div class="text-center text-gray-400 mt-10">Cart is empty.</div>
             </div>
+            <!-- Cart Footer -->
             <div class="p-4 border-t bg-white">
                 <div class="flex justify-between items-center mb-4">
                     <span class="font-bold text-lg">Total</span>
@@ -411,12 +494,35 @@
         </div>
     </div>
 
-    <!-- Assigned Task Modal & Report Modal (Kept same structure) -->
+    <!-- Assigned Task Modal -->
     <div id="assignedTaskModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white w-full max-w-2xl h-3/4 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in"><div class="p-4 bg-primary text-white flex justify-between items-center"><h3 class="font-bold text-lg">Assigned Tasks</h3><button onclick="toggleAssignedModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button></div><div class="flex-1 overflow-y-auto p-6 bg-gray-50"><div id="acceptTaskList" class="space-y-3"></div><div id="noAssignedTasksMsg" class="hidden text-center text-gray-400 mt-10">No pending tasks.</div></div></div>
+        <div class="bg-white w-full max-w-2xl h-3/4 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+            <div class="p-4 bg-primary text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg"><i class="fa-solid fa-bell mr-2"></i>Assigned Tasks</h3>
+                <button onclick="toggleAssignedModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div id="acceptTaskList" class="space-y-3"></div>
+                <div id="noAssignedTasksMsg" class="hidden text-center text-gray-400 mt-10"><i class="fa-solid fa-clipboard-check text-4xl mb-2"></i><p>No pending tasks assigned.</p></div>
+            </div>
+        </div>
     </div>
+
+    <!-- Report Modal -->
     <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white w-full max-w-4xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden"><div class="p-4 bg-gray-50 border-b flex justify-between items-center"><h3 class="text-lg font-bold text-gray-700">Daily Visit Report</h3><button onclick="closeReportModal()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button></div><div class="flex-1 overflow-y-auto p-6"><div class="space-y-4" id="reportRows"></div><button onclick="addReportRow()" class="mt-6 w-full py-3 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg hover:border-primary hover:text-primary font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Another Customer</button></div><div class="p-4 border-t bg-gray-50 flex justify-end"><button onclick="submitReport()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold shadow-md flex items-center"><i class="fa-brands fa-whatsapp mr-2"></i> Submit & Share</button></div></div>
+        <div class="bg-white w-full max-w-4xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-700">Daily Visit Report</h3>
+                <button onclick="closeReportModal()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="space-y-4" id="reportRows"></div>
+                <button onclick="addReportRow()" class="mt-6 w-full py-3 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg hover:border-primary hover:text-primary font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Another Customer</button>
+            </div>
+            <div class="p-4 border-t bg-gray-50 flex justify-end">
+                <button onclick="submitReport()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold shadow-md flex items-center"><i class="fa-brands fa-whatsapp mr-2"></i> Submit & Share</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -429,98 +535,252 @@
         let todayTasks = [];
         let globalHistory = []; 
         let adminTasks = [];
-        let cartItems = []; // {code, name, price, qty, total}
+        let adminExportLogs = []; 
+        
+        // New Globals for Cart
+        let cartItems = []; // {code, name, price, qty}
         let cartCustomer = null; 
 
         const repDirectory = {
-            "10543": "Beny", "10882": "Prince", "10989": "Abigail", "11006": "Hilda", "11029": "Linda"
+            "10543": "Beny",
+            "10882": "Prince",
+            "10989": "Abigail",
+            "11006": "Hilda",
+            "11029": "Linda"
         };
 
-        try { const savedUser = localStorage.getItem('salesMasterUser'); if (savedUser) { } } catch(e) {}
+        // --- Fast Session Check ---
+        try {
+            const savedUser = localStorage.getItem('salesMasterUser');
+            if (savedUser) {
+                // UI could be optimized here but logic is in window.onload
+            }
+        } catch(e) {}
 
         window.onload = function() {
             checkSession(); 
+
+            // Load CSVs in background
             loadCustomersCSV(); 
             loadProductCSV(); 
             initDraggableListBtn(); 
             initPullToRefresh('adminMain', 'adminPullIndicator');
             initPullToRefresh('salesMain', 'salesPullIndicator');
+            
             const saved = localStorage.getItem('salesMasterUser');
-            if(!saved) document.getElementById('loginSection').classList.remove('hidden');
+            if(!saved) {
+                document.getElementById('loginSection').classList.remove('hidden');
+            }
         };
 
         function initDraggableListBtn() { const btn = document.getElementById('draggableListBtn'); let isDragging = false, startY, startTop; const handleStart = (e) => { isDragging = false; const touch = e.touches ? e.touches[0] : e; startY = touch.clientY; startTop = btn.offsetTop; }; const handleMove = (e) => { const touch = e.touches ? e.touches[0] : e; if (Math.abs(touch.clientY - startY) > 5) isDragging = true; if (isDragging) { e.preventDefault(); let newTop = startTop + (touch.clientY - startY); btn.style.top = Math.max(50, Math.min(window.innerHeight - 80, newTop)) + 'px'; } }; btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchmove', handleMove, {passive: false}); btn.addEventListener('click', () => { if (!isDragging) openProductPage(); }); }
-        function initPullToRefresh(cid, iid) { /* standard P2R code as before */ const container=document.getElementById(cid); const indicator=document.getElementById(iid); let startY=0,isPulling=false; container.addEventListener('touchstart',e=>{if(container.scrollTop===0){startY=e.touches[0].clientY;isPulling=true}}); container.addEventListener('touchmove',e=>{if(!isPulling)return;const y=e.touches[0].clientY;const diff=y-startY;if(diff>0&&diff<200&&container.scrollTop===0){indicator.style.height=`${diff/3}px`}}); container.addEventListener('touchend',e=>{if(!isPulling)return;isPulling=false;const endY=e.changedTouches[0].clientY;if(endY-startY>80&&container.scrollTop===0){indicator.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-2"></i> Refreshing...';indicator.style.height='50px';refreshData().then(()=>{setTimeout(()=>{indicator.style.height='0px';indicator.innerHTML='<i class="fa-solid fa-arrow-down mr-2"></i> Pull to refresh'},500)}) }else{indicator.style.height='0px'}}); }
         
         function checkSession() { 
             const saved = localStorage.getItem('salesMasterUser'); 
             if(saved) { 
                 const user = JSON.parse(saved); 
-                document.getElementById('loginRepCode').value = user.code==='admin'?'admin':user.code; 
-                document.getElementById('loginPassword').value = user.code==='admin'?'8888':'0000'; 
-                document.body.classList.add('loaded'); document.getElementById('loginSection').classList.add('hidden');
-                if (user.isAdmin) document.getElementById('adminSection').classList.remove('hidden'); 
-                else document.getElementById('appSection').classList.remove('hidden');
+                document.getElementById('loginRepCode').value = user.code === 'admin' ? 'admin' : user.code; 
+                document.getElementById('loginPassword').value = user.code === 'admin' ? '8888' : '0000'; 
+                
+                document.body.classList.add('loaded'); 
+                document.getElementById('loginSection').classList.add('hidden');
+                
+                if (user.isAdmin) {
+                    document.getElementById('adminSection').classList.remove('hidden');
+                } else {
+                    document.getElementById('appSection').classList.remove('hidden');
+                }
+                
                 performLogin(true); 
             } 
         }
+        
+        function initPullToRefresh(containerId, indicatorId) { const container = document.getElementById(containerId); const indicator = document.getElementById(indicatorId); let startY = 0; let isPulling = false; container.addEventListener('touchstart', (e) => { if (container.scrollTop === 0) { startY = e.touches[0].clientY; isPulling = true; } }); container.addEventListener('touchmove', (e) => { if (!isPulling) return; const y = e.touches[0].clientY; const diff = y - startY; if (diff > 0 && diff < 200 && container.scrollTop === 0) { indicator.style.height = `${diff / 3}px`; } }); container.addEventListener('touchend', (e) => { if (!isPulling) return; isPulling = false; const endY = e.changedTouches[0].clientY; if (endY - startY > 80 && container.scrollTop === 0) { indicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Refreshing...'; indicator.style.height = '50px'; refreshData().then(() => { setTimeout(() => { indicator.style.height = '0px'; indicator.innerHTML = '<i class="fa-solid fa-arrow-down mr-2"></i> Pull to refresh'; }, 500); }); } else { indicator.style.height = '0px'; } }); }
+        
+        async function refreshData() { 
+            if (!currentUser) return; 
+            try { 
+                if(currentUser.isAdmin) { 
+                    await loadAllDataForAdmin(); 
+                    renderAdminTasks(); 
+                    renderAdminReports();
+                    renderAdminRequests();
+                    loadAdminAttendance(); // NEW
+                } else { 
+                    await loadTasksFromCloud(); 
+                    await loadHistoryFromCloud(); 
+                    await loadAssignedTasksForRep(); 
+                    applySidebarFilter(); 
+                    renderTasks(); 
+                    updateAssignedBadge(); 
+                } 
+            } catch (e) { console.error(e); } 
+        }
 
-        // CSV Loaders
-        function loadCustomersCSV() { Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { allSalesData = results.data.map(item => ({ id: (item.Code||item.code||"").trim(), name: (item.Name||item.name||"Unknown").trim(), csvRepName: (item.RepName||item.repname||"Sales").trim(), repCode: (item.Limit||item.limit||"").trim().toUpperCase(), phone: (item.Phone||item.phone||"").trim(), credit: (item.Credit||item.credit||"0").trim() })); if(currentUser && !currentUser.isAdmin) myCustomers = allSalesData.filter(c => c.repCode == currentUser.code); }}); }
+        function loadCustomersCSV() { 
+            Papa.parse("customers.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { 
+                allSalesData = results.data.map(item => {
+                    return { 
+                        id: (item.Code||item.code||"").trim(), 
+                        name: (item.Name||item.name||"Unknown").trim(), 
+                        csvRepName: (item.RepName||item.repname||"Sales").trim(), 
+                        repCode: (item.Limit||item.limit||"").trim().toUpperCase(), 
+                        phone: (item.Phone||item.phone||"").trim(), 
+                        credit: (item.Credit||item.credit||"0").trim() 
+                    };
+                }); 
+                if(currentUser && !currentUser.isAdmin) {
+                    if (repDirectory[currentUser.code]) {
+                        myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
+                    } else {
+                        myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
+                    }
+                }
+            }}); 
+        }
+        
         function loadProductCSV() { Papa.parse("products.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { allProductData = results.data.map(item => ({ code: (item.Code||item.code||"").trim(), name: (item.Name||item.name||"").trim(), stock: parseFloat(item.Stock||item.stock||"0"), price: (item.Price||item.price||"0").trim(), promo: (item.PromoPrice||item.promoprice||"").trim(), isNew: (item.New||item.new||"0").trim() })); } }); }
 
         async function performLogin(silent = false) { 
             const code = document.getElementById('loginRepCode').value.trim(); 
             const pass = document.getElementById('loginPassword').value.trim(); 
+            const status = document.getElementById('loginStatus'); 
             const btn = document.getElementById('btnLogin');
-            if (!silent) { btn.innerHTML = '...'; btn.classList.add('btn-loading'); await new Promise(r => setTimeout(r, 50)); }
+
+            if (!silent) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin animate-spin"></i> Checking...'; btn.classList.add('btn-loading'); }
+            if (!silent) await new Promise(r => setTimeout(r, 50));
+
+            // Admin
             if (code.toLowerCase() === 'admin' && pass === '8888') { 
                 currentUser = { code: 'admin', name: 'Administrator', isAdmin: true }; 
                 localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
-                await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('adminSection').classList.remove('hidden'); document.body.classList.add('loaded');
-                addAssignRow(); initAdminReportFilters(); if(!silent) resetLoginBtn(); return; 
+                await refreshData(); 
+                document.getElementById('loginSection').classList.add('hidden'); 
+                document.getElementById('adminSection').classList.remove('hidden'); 
+                document.body.classList.add('loaded');
+                addAssignRow(); initAdminReportFilters(); initAdminAttFilters();
+                if(!silent) resetLoginBtn();
+                return; 
             } 
-            if (pass !== '0000') { if(!silent) { alert("Wrong Password"); resetLoginBtn(); } return; } 
             
-            let finalName = repDirectory[code];
-            if (!finalName && allSalesData.length) { const c = allSalesData.find(x=>x.repCode==code); if(c) finalName = c.csvRepName; }
-            if (finalName || allSalesData.length > 0) {
-                 currentUser = { code: code, name: finalName || "Sales", isAdmin: false };
-                 if(allSalesData.length) myCustomers = allSalesData.filter(c => c.repCode == code);
-                 localStorage.setItem('salesMasterUser', JSON.stringify(currentUser));
-                 await refreshData(); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); document.body.classList.add('loaded'); document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`;
-                 listenForPdfStatus(); listenForHistory(); if(!silent) resetLoginBtn(); return;
+            // Rep
+            if (pass !== '0000') { 
+                if(!silent) { status.innerText = "Wrong Password"; status.classList.remove('hidden'); resetLoginBtn(); }
+                return; 
+            } 
+            
+            // Hardcoded Rep Check
+            if (repDirectory[code]) {
+                let finalName = repDirectory[code];
+                if(allSalesData.length > 0) myCustomers = allSalesData.filter(c => c.repCode == code); 
+                currentUser = { code: code, name: finalName, isAdmin: false }; 
+                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
+                await refreshData(); 
+                document.getElementById('loginSection').classList.add('hidden'); 
+                document.getElementById('appSection').classList.remove('hidden'); 
+                document.body.classList.add('loaded'); 
+                document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; 
+                listenForPdfStatus(); 
+                listenForHistory(); 
+                if(!silent) resetLoginBtn();
+                return;
             }
-            if(silent) return; if(!silent) { alert("Code not found"); resetLoginBtn(); }
+
+            // Fallback
+            const customers = allSalesData.filter(c => c.repCode == code); 
+            if (customers.length > 0) { 
+                 myCustomers = customers;
+                 currentUser = { code: code, name: customers[0].csvRepName, isAdmin: false };
+                 localStorage.setItem('salesMasterUser', JSON.stringify(currentUser));
+                 await refreshData();
+                 document.getElementById('loginSection').classList.add('hidden');
+                 document.getElementById('appSection').classList.remove('hidden');
+                 document.body.classList.add('loaded');
+                 document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`;
+                 listenForPdfStatus(); listenForHistory();
+                 if(!silent) resetLoginBtn();
+                 return;
+            }
+            
+            if(silent) return;
+
+            if(!silent) { status.innerText = "Code not found"; status.classList.remove('hidden'); resetLoginBtn(); }
         }
+
         function resetLoginBtn() { const btn = document.getElementById('btnLogin'); btn.innerHTML = 'LOGIN'; btn.classList.remove('btn-loading'); }
-        function logout() { localStorage.removeItem('salesMasterUser'); currentUser = null; location.reload(); }
+        function logout() { localStorage.removeItem('salesMasterUser'); currentUser = null; document.getElementById('appSection').classList.add('hidden'); document.getElementById('adminSection').classList.add('hidden'); document.getElementById('loginSection').classList.remove('hidden'); document.getElementById('loginRepCode').value = ''; document.getElementById('loginPassword').value = ''; document.body.classList.remove('loaded'); }
 
-        async function refreshData() { 
-            if (!currentUser) return; 
-            if(currentUser.isAdmin) { await loadAllDataForAdmin(); renderAdminTasks(); renderAdminReports(); renderAdminRequests(); loadAdminAttendance(); } 
-            else { await loadTasksFromCloud(); await loadHistoryFromCloud(); await loadAssignedTasksForRep(); applySidebarFilter(); renderTasks(); updateAssignedBadge(); } 
-        }
-
-        // --- Admin Functions ---
+        // ================= ADMIN FUNCTIONS =================
         async function loadAllDataForAdmin() {
-            const taskSnap = await db.collection('admin_tasks').orderBy('timestamp', 'desc').get(); adminTasks = []; taskSnap.forEach(d => adminTasks.push({ docId: d.id, ...d.data() }));
-            const repSnap = await db.collection('reports').orderBy('timestamp', 'desc').get(); globalHistory = []; repSnap.forEach(d => globalHistory.push({ docId: d.id, ...d.data() }));
+            const taskSnap = await db.collection('admin_tasks').orderBy('timestamp', 'desc').get();
+            adminTasks = []; taskSnap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() }));
+            const repSnap = await db.collection('reports').orderBy('timestamp', 'desc').get();
+            globalHistory = []; repSnap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() }));
+            const logSnap = await db.collection('export_logs').orderBy('timestamp', 'desc').limit(200).get();
+            adminExportLogs = []; logSnap.forEach(doc => adminExportLogs.push({ docId: doc.id, ...doc.data() }));
         }
-        function switchAdminTab(tab) { ['assign','history','reports','attendance','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } if(tab==='attendance') { initAdminAttFilters(); loadAdminAttendance(); } }
+        function switchAdminTab(tab) { ['assign','history','reports','attendance','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } if(tab === 'attendance') { initAdminAttFilters(); loadAdminAttendance(); } }
+        function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
         
-        function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [c, n] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${c}">${n} (${c})</option>`; }
-        function renderAdminTasks() { /* ... same as before ... */ const f = document.getElementById('adminTaskFilter').value.toLowerCase(); const c = document.getElementById('adminTaskList'); c.innerHTML=''; if(!f){c.innerHTML='<div class="text-gray-400 text-center text-xs mt-10">Enter search term.</div>';return} const arr = adminTasks.filter(t=>t.repName.toLowerCase().includes(f)||t.customerName.toLowerCase().includes(f)).slice(0,50); arr.forEach(t=>{ const done=t.status==='completed'; c.innerHTML+=`<div class="p-3 rounded border flex justify-between items-center ${done?'bg-green-50 border-green-200':'bg-white'}"><div><div class="font-bold text-sm">${t.repName}->${t.customerName}</div><div class="text-xs text-gray-500">${t.taskDetail}</div></div><div>${done?`<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs">Undo</button>`:`<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300"><i class="fa-solid fa-rotate-left"></i></button>`}</div></div>` }); }
-        async function adminRestoreTask(id) { if(confirm('Undo?')) await db.collection('admin_tasks').doc(id).update({status: 'pending'}); refreshData(); }
-        async function adminDeleteTask(id) { if(confirm('Delete?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
-        function renderAdminReports() { /* ... same ... */ const dV=document.getElementById('adminReportDateFilter').value; const rV=document.getElementById('adminReportRepFilter').value; const tV=document.getElementById('adminReportTextFilter').value.toLowerCase(); const tb=document.getElementById('adminReportTableBody'); const mb=document.getElementById('adminReportMobileList'); tb.innerHTML=''; mb.innerHTML=''; if(!dV&&!rV&&!tV){mb.innerHTML='<div class="text-gray-400 text-center text-xs mt-4">Apply filters.</div>';return} globalHistory.filter(r=>{ let mD=true; if(dV){mD=(new Date(r.date).toDateString()===new Date(dV).toDateString())} let mR=true; if(rV)mR=(r.repCode===rV); let mT=true; if(tV)mT=(r.customerName&&r.customerName.toLowerCase().includes(tV)); return mD&&mR&&mT; }).forEach(r=>{ const ds=new Date(r.date).toLocaleDateString(); const rn=repDirectory[r.repCode]||r.repCode; tb.innerHTML+=`<tr class="border-b"><td class="p-3">${ds}</td><td class="p-3 font-bold">${rn}</td><td class="p-3">${r.customerName}</td><td class="p-3 text-gray-600">${r.note}</td></tr>`; mb.innerHTML+=`<div class="bg-white p-3 rounded shadow mb-2 border-l-4 border-gray-500"><div class="flex justify-between"><span class="font-bold">${rn}</span><span class="text-xs">${ds}</span></div><div class="text-sm font-bold text-primary">${r.customerName}</div><div class="text-sm text-gray-600 bg-gray-50 p-2">${r.note}</div></div>` }); }
-        // ... Exports functions same ...
-        async function renderAdminRequests() { const l=document.getElementById('adminRequestList'); l.innerHTML=''; const s=await db.collection('pdf_requests').where('status','==','pending').get(); if(s.empty){l.innerHTML='<div class="text-gray-400 text-center">No requests.</div>';return} s.forEach(d=>{ const r=d.data(); l.innerHTML+=`<div class="bg-white p-4 rounded shadow border-l-4 border-orange-400 flex justify-between"><div><div class="font-bold">${r.repName}</div><div class="text-sm">${r.query}</div></div><div><button onclick="adminRejectRequest('${d.id}')" class="text-red-600 mr-2">X</button><button onclick="adminApproveRequest('${d.id}')" class="text-green-600">OK</button></div></div>` }); }
+        function renderAdminTasks() { 
+            const f = document.getElementById('adminTaskFilter').value.toLowerCase(); 
+            const container = document.getElementById('adminTaskList');
+            container.innerHTML = '';
+            
+            if(!f) { container.innerHTML = '<div class="text-gray-400 text-center text-xs mt-10">Enter search term to view tasks.</div>'; return; }
+
+            const filtered = adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f));
+            
+            filtered.slice(0, 50).forEach(t => {
+                const isDone = t.status === 'completed';
+                const statusColor = isDone ? 'text-green-600' : 'text-orange-500';
+                const div = document.createElement('div');
+                div.className = `p-3 rounded border flex justify-between items-center ${isDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`;
+                div.innerHTML = `<div><div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div><div class="text-xs text-gray-500 mt-1">${t.assignedDate} | ${t.taskDetail}</div><div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div></div><div>${isDone ? `<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs underline font-bold">Undo</button>` : `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-rotate-left"></i></button>`}</div>`;
+                container.appendChild(div);
+            });
+        }
+        async function adminRestoreTask(id) { if(confirm('Undo this task?')) await db.collection('admin_tasks').doc(id).update({status: 'pending'}); refreshData(); }
+        async function adminDeleteTask(id) { if(confirm('Delete/Cancel task?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
+
+        function renderAdminReports() { 
+            const dateVal = document.getElementById('adminReportDateFilter').value; 
+            const repVal = document.getElementById('adminReportRepFilter').value; 
+            const textVal = document.getElementById('adminReportTextFilter').value.toLowerCase(); 
+            const tbody = document.getElementById('adminReportTableBody'); 
+            const mobileContainer = document.getElementById('adminReportMobileList'); 
+            tbody.innerHTML = ''; mobileContainer.innerHTML = ''; 
+            
+            if(!dateVal && !repVal && !textVal) { mobileContainer.innerHTML = '<div class="text-gray-400 text-center text-xs mt-4">Apply filters to view reports.</div>'; return; }
+            
+            globalHistory.filter(r => { let matchDate = true; if (dateVal) { const rDate = new Date(r.date); const filterDate = new Date(dateVal); matchDate = (rDate.toDateString() === filterDate.toDateString()); } let matchRep = true; if (repVal) matchRep = (r.repCode === repVal); let matchText = true; if (textVal) matchText = (r.customerName && r.customerName.toLowerCase().includes(textVal)); return matchDate && matchRep && matchText; }).forEach(r => { const dateStr = new Date(r.date).toLocaleDateString(); const repName = repDirectory[r.repCode] || r.repCode; tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${dateStr}</td><td class="p-3 font-bold">${repName}</td><td class="p-3">${r.customerName}</td><td class="p-3 text-gray-600">${r.note}</td></tr>`; mobileContainer.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 border-gray-500 mb-2"><div class="flex justify-between items-center mb-1"><span class="font-bold text-gray-800">${repName}</span><span class="text-xs text-gray-400">${dateStr}</span></div><div class="text-sm font-bold text-primary mb-1">${r.customerName}</div><div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">${r.note}</div></div>`; }); 
+        }
+        function adminExportReports() {
+            let csv = "Date,Rep,Customer,Note\n"; const dateVal = document.getElementById('adminReportDateFilter').value; const repVal = document.getElementById('adminReportRepFilter').value; const textVal = document.getElementById('adminReportTextFilter').value.toLowerCase();
+            globalHistory.filter(r => { let matchDate = true; if (dateVal) { const rDate = new Date(r.date); const fDate = new Date(dateVal); matchDate = (rDate.toDateString() === fDate.toDateString()); } let matchRep = true; if (repVal) matchRep = (r.repCode === repVal); let matchText = true; if (textVal) matchText = (r.customerName && r.customerName.toLowerCase().includes(textVal)); return matchDate && matchRep && matchText; }).forEach(r => csv += `${new Date(r.date).toLocaleDateString()},${repDirectory[r.repCode] || r.repCode},${r.customerName},"${r.note}"\n`);
+            const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `Reports_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click();
+        }
+        function adminExportTasks() { let csv = "AssignedDate,Rep,Customer,Detail,Status\n"; const f = document.getElementById('adminTaskFilter').value.toLowerCase(); adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f)).forEach(t => csv += `${t.assignedDate},${t.repName},${t.customerName},"${t.taskDetail}",${t.status}\n`); const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `Tasks_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); }
+        
+        async function renderAdminRequests() {
+            const list = document.getElementById('adminRequestList'); list.innerHTML = '<div class="text-center"><div class="spinner"></div></div>'; const snap = await db.collection('pdf_requests').where('status', '==', 'pending').get(); list.innerHTML = '';
+            let requests = []; snap.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
+            requests.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+            if (requests.length === 0) { list.innerHTML = '<div class="text-gray-400 text-center p-4">No pending requests.</div>'; return; }
+            requests.forEach(req => { const ts = req.timestamp ? new Date(req.timestamp.seconds*1000).toLocaleTimeString() : 'Just now'; list.innerHTML += `<div class="bg-white p-4 rounded shadow border-l-4 border-orange-400 flex justify-between items-center"><div><div class="font-bold text-gray-800">${req.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div><div class="text-sm text-gray-600">Requesting: <span class="font-mono bg-gray-100 px-1 rounded">${req.query}</span></div></div><div class="flex space-x-3"><button onclick="adminRejectRequest('${req.id}')" class="bg-red-100 text-red-600 w-10 h-10 rounded-full hover:bg-red-200"><i class="fa-solid fa-times"></i></button><button onclick="adminApproveRequest('${req.id}')" class="bg-green-100 text-green-600 w-10 h-10 rounded-full hover:bg-green-200"><i class="fa-solid fa-check"></i></button></div></div>`; });
+        }
         async function adminApproveRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'approved'}); renderAdminRequests(); }
         async function adminRejectRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'rejected'}); renderAdminRequests(); }
 
         // ★★★ ADMIN ATTENDANCE LOGIC ★★★
-        function initAdminAttFilters() { const s = document.getElementById('adminAttRep'); if(s.options.length>1)return; for(const [c,n] of Object.entries(repDirectory)) s.innerHTML+=`<option value="${c}">${n}</option>`; document.getElementById('adminAttMonth').valueAsDate = new Date(); }
+        function initAdminAttFilters() { 
+            const s = document.getElementById('adminAttRep'); 
+            if(s.options.length>1)return; 
+            for(const [c,n] of Object.entries(repDirectory)) s.innerHTML+=`<option value="${c}">${n}</option>`; 
+            document.getElementById('adminAttMonth').valueAsDate = new Date(); 
+        }
+        
         async function loadAdminAttendance() {
             const m = document.getElementById('adminAttMonth').value; 
             const rep = document.getElementById('adminAttRep').value;
@@ -547,16 +807,17 @@
                     </div>`;
             });
 
-            // 2. Attendance Logs (Mocking filtered query via client side for simplicity)
-            // Real app should index this. Fetching all logs for month is okay for small teams.
+            // 2. Logs
             let logs = [];
             const startStr = m + "-01";
             const endStr = m + "-31"; 
             
+            // Clock Ins
             const logSnap = await db.collection('attendance_logs')
                 .where('dateString', '>=', startStr).where('dateString', '<=', endStr).get();
             logSnap.forEach(d => logs.push({...d.data(), type: 'Clock In'}));
 
+            // Approved Leaves
             const leaveSnap = await db.collection('leave_requests')
                 .where('startDate', '>=', startStr).where('status', '==', 'approved').get();
             leaveSnap.forEach(d => logs.push({...d.data(), type: 'Leave', dateString: d.startDate}));
@@ -582,40 +843,110 @@
             loadAdminAttendance();
         }
 
-        // --- Sales Rep Functions ---
-        // (Existing Logic kept mostly same, added Attendance/Cart)
-        function toggleSidebar() { document.getElementById('taskSidebar').classList.toggle('sidebar-closed'); document.getElementById('taskSidebar').classList.toggle('sidebar-open'); if(document.getElementById('taskSidebar').classList.contains('sidebar-open')) { applySidebarFilter(); } }
-        function handleMainSearch(query) { /* Same */ const container = document.getElementById('mainSearchResult'); if (query.length < 2) { container.classList.add('hidden'); return; } const res = myCustomers.find(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.id.toLowerCase().includes(query.toLowerCase())); container.classList.remove('hidden'); if (res) { container.innerHTML = `<div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row justify-between items-center"><div class="mb-4 md:mb-0 text-left"><h3 class="text-xl font-bold text-primary">${res.name}</h3><div class="text-sm text-gray-500 mt-2 space-y-1"><div><i class="fa-solid fa-id-badge mr-2 w-5"></i> ${res.id}</div><div><a href="tel:${res.phone}" class="text-blue-600 hover:underline font-bold"><i class="fa-solid fa-phone mr-2 w-5"></i> ${res.phone}</a></div><div><i class="fa-solid fa-wallet mr-2 w-5"></i> Limit: ${res.credit}</div></div></div><button onclick="window.open('https://wa.me/233550584720?text=${encodeURIComponent(`Statement for ${res.name} (${res.id})`)}', '_blank')" class="bg-green-100 text-green-700 px-5 py-2 rounded-lg font-bold hover:bg-green-200"><i class="fa-brands fa-whatsapp mr-2"></i> Statement</button></div>`; } else { container.innerHTML = `<div class="bg-white p-4 rounded-xl text-center text-gray-400">Not Found</div>`; } }
-        async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); todayTasks = (d.exists && d.data().date === new Date().toLocaleDateString()) ? d.data().tasks : []; }
+        // 1. Fixed: Assign Row uses Hardcoded Directory
+        function addAssignRow() { 
+            const container = document.getElementById('assignRowsContainer'); 
+            const rowId = Date.now() + Math.random(); 
+            let repCheckboxes = '<div class="h-24 overflow-y-auto border rounded p-2 bg-white">'; 
+            for (const [code, name] of Object.entries(repDirectory)) { 
+                repCheckboxes += `<label class="flex items-center space-x-2 mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded"><input type="checkbox" value="${code}" class="assign-rep-checkbox accent-primary"><span class="text-xs text-gray-700 font-bold">${name}</span></label>`; 
+            } 
+            repCheckboxes += '</div>'; 
+            const div = document.createElement('div'); div.className = "assign-row bg-gray-50 p-3 rounded border grid grid-cols-1 md:grid-cols-3 gap-2 relative"; div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow hover:bg-red-600">X</button><div><label class="text-[10px] font-bold text-gray-500">SELECT REPS</label>${repCheckboxes}</div><div><label class="text-[10px] font-bold text-gray-500">CUSTOMER</label><div class="relative"><input type="text" placeholder="Search..." class="w-full p-2 border rounded text-sm" onkeyup="searchAdminCustInRow(this, '${rowId}')"><div id="res-${rowId}" class="absolute z-10 bg-white w-full max-h-40 overflow-auto shadow hidden border"></div><input type="hidden" class="assign-cust-id"><input type="hidden" class="assign-cust-name"></div></div><div><label class="text-[10px] font-bold text-gray-500">INSTRUCTION</label><input type="text" class="assign-note w-full p-2 border rounded text-sm" placeholder="Task details..."></div>`; container.appendChild(div); 
+        }
+        function searchAdminCustInRow(inp, rowId) { const val = inp.value.toLowerCase(); const box = document.getElementById(`res-${rowId}`); if(val.length<2) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); allSalesData.filter(c => c.name.toLowerCase().includes(val)).slice(0,10).forEach(c => { const d = document.createElement('div'); d.className = "p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText = `${c.name} (${c.id})`; d.onclick = () => { inp.value = c.name; inp.parentElement.querySelector('.assign-cust-id').value = c.id; inp.parentElement.querySelector('.assign-cust-name').value = c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
+        async function adminSubmitBulkTasks() { const rows = document.querySelectorAll('.assign-row'); const batch = db.batch(); let count = 0; rows.forEach(row => { const cbs = row.querySelectorAll('.assign-rep-checkbox:checked'); const cid = row.querySelector('.assign-cust-id').value; const cnm = row.querySelector('.assign-cust-name').value; const nt = row.querySelector('.assign-note').value; if(cbs.length && cid && nt) { cbs.forEach(cb => { const ref = db.collection('admin_tasks').doc(); batch.set(ref, { repCode: cb.value, repName: repDirectory[cb.value], customerId: cid, customerName: cnm, taskDetail: nt, status: 'pending', assignedDate: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }); count++; }); } }); if(count>0) { await batch.commit(); alert('Tasks Assigned'); document.getElementById('assignRowsContainer').innerHTML = ''; addAssignRow(); } }
+
+        // ================= SALES REP FUNCTIONS =================
+        function getCustomerStats(custId) {
+            const now = new Date(); const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay() + 1); startOfWeek.setHours(0,0,0,0); const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            let week = 0, month = 0; globalHistory.forEach(h => { if (h.customerId === custId) { const d = new Date(h.date); if (d >= startOfWeek) week++; if (d >= startOfMonth) month++; } }); return { week, month };
+        }
+        function applySidebarFilter() {
+            const mode = document.getElementById('sidebarFilterMode').value; const q = document.querySelector('#taskSidebar input').value.toLowerCase();
+            let filtered = myCustomers.filter(c => c.name.toLowerCase().includes(q));
+            if (mode === 'missed_week') { filtered = filtered.filter(c => getCustomerStats(c.id).week === 0); } 
+            else if (mode === 'missed_month') { filtered = filtered.filter(c => getCustomerStats(c.id).month === 0); }
+            const list = document.getElementById('customerSidebarList'); list.innerHTML = '';
+            filtered.slice(0, 200).forEach(c => {
+                const stats = getCustomerStats(c.id);
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center bg-white p-3 rounded border hover:shadow cursor-pointer mb-2";
+                item.innerHTML = `<div><div class="font-bold text-gray-700 text-sm">${c.name}</div><div class="text-xs text-gray-400">${c.id}</div></div><div class="flex items-center space-x-2"><div class="text-[10px] text-gray-500 text-right mr-2"><div>Week: <span class="font-bold ${stats.week==0?'text-red-500':'text-green-600'}">${stats.week}</span></div><div>Month: <span class="font-bold ${stats.month==0?'text-red-500':'text-green-600'}">${stats.month}</span></div></div><button onclick="addToTask('${c.id}')" class="text-gray-300 hover:text-green-500 p-2"><i class="fa-solid fa-plus-circle text-xl"></i></button></div>`;
+                list.appendChild(item);
+            });
+        }
+        function filterSidebarList(val) { applySidebarFilter(); }
+        async function loadAssignedTasksForRep() { const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', '==', 'pending').get(); adminTasks = []; snap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() })); }
+        function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
+        function renderAcceptTasks() { document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `<div class="bg-white p-4 rounded shadow mb-2 flex justify-between"><div><div class="font-bold">${t.customerName}</div><div class="text-xs">${t.taskDetail}</div></div><div class="flex space-x-3"><button onclick="addTaskToToday('${t.docId}', '${t.customerId}')" class="bg-gray-100 w-10 h-10 rounded-full hover:bg-green-200 text-green-600 shadow flex items-center justify-center"><i class="fa-solid fa-plus"></i></button><button onclick="completeAssignedTask('${t.docId}')" class="bg-primary w-10 h-10 rounded-full hover:bg-blue-800 text-white shadow flex items-center justify-center"><i class="fa-solid fa-check"></i></button></div></div>`).join(''); document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); }
+        function addTaskToToday(did, cid) { addToTask(cid); const btn = document.querySelector(`#accept-${did} button`); if(btn) btn.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>'; }
+        async function completeAssignedTask(docId) { if(!confirm("Mark completed?")) return; await db.collection('admin_tasks').doc(docId).update({ status: 'completed', completedDate: new Date().toISOString() }); const el = document.getElementById(`accept-${docId}`); el.classList.add('task-fade-out'); setTimeout(() => { adminTasks = adminTasks.filter(t => t.docId !== docId); renderAcceptTasks(); updateAssignedBadge(); }, 500); }
+        async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if (d.exists && d.data().date === new Date().toLocaleDateString()) { todayTasks = d.data().tasks || []; } else { todayTasks = []; } }
         async function saveTasksToCloud() { if(!currentUser.isAdmin) await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
+        async function loadHistoryFromCloud() { const snap = await db.collection('reports').where('repCode', '==', currentUser.code).get(); globalHistory = []; snap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() })); }
+        function handleMainSearch(query) {
+            const container = document.getElementById('mainSearchResult'); if (query.length < 2) { container.classList.add('hidden'); return; }
+            const res = myCustomers.find(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.id.toLowerCase().includes(query.toLowerCase()));
+            container.classList.remove('hidden');
+            if (res) { container.innerHTML = `<div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row justify-between items-center"><div class="mb-4 md:mb-0 text-left"><h3 class="text-xl font-bold text-primary">${res.name}</h3><div class="text-sm text-gray-500 mt-2 space-y-1"><div><i class="fa-solid fa-id-badge mr-2 w-5"></i> ${res.id}</div><div><a href="tel:${res.phone}" class="text-blue-600 hover:underline font-bold"><i class="fa-solid fa-phone mr-2 w-5"></i> ${res.phone}</a></div><div><i class="fa-solid fa-wallet mr-2 w-5"></i> Limit: ${res.credit}</div></div></div><button onclick="window.open('https://wa.me/233550584720?text=${encodeURIComponent(`I want statement of ${res.name} (${res.id})`)}', '_blank')" class="bg-green-100 text-green-700 px-5 py-2 rounded-lg font-bold hover:bg-green-200 transition"><i class="fa-brands fa-whatsapp mr-2"></i> Statement</button></div>`; } else { container.innerHTML = `<div class="bg-white p-4 rounded-xl text-center text-gray-400">Not Found</div>`; }
+        }
+
+        function toggleSidebar() { document.getElementById('taskSidebar').classList.toggle('sidebar-closed'); document.getElementById('taskSidebar').classList.toggle('sidebar-open'); if(document.getElementById('taskSidebar').classList.contains('sidebar-open')) { applySidebarFilter(); } }
         function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(myCustomers.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
         window.removeFromTask = function(id) { todayTasks = todayTasks.filter(t => t.id !== id); saveTasksToCloud(); renderTasks(); }
         function renderTasks() { document.getElementById('todayTaskList').innerHTML = todayTasks.map(t => `<div class="bg-white p-4 rounded shadow border relative"><h4 class="font-bold">${t.name}</h4><button onclick="removeFromTask('${t.id}')" class="absolute top-2 right-2 text-red-500"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
-        function shareTaskToGroup() { if(!todayTasks.length) return alert("Empty"); let msg = `*${currentUser.name}'s Plan*\n${new Date().toLocaleDateString()}\n---\n`; todayTasks.forEach((t, i) => msg += `${i+1}. ${t.name}\n`); window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank'); }
-        
+        function shareTaskToGroup() { if(todayTasks.length === 0) return alert("Task list is empty"); let msg = `*${currentUser.name}'s Plan*\n${new Date().toLocaleDateString()}\n------------------\n`; todayTasks.forEach((t, i) => msg += `${i+1}. ${t.name}\n`); window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank'); }
         function openReportModal() { document.getElementById('reportModal').classList.remove('hidden'); document.getElementById('reportRows').innerHTML = ''; if(todayTasks.length) todayTasks.forEach(t => addReportRow(t)); else addReportRow(); }
         function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
-        function addReportRow(d=null) { document.getElementById('reportRows').innerHTML += `<div class="bg-gray-50 p-4 rounded mb-2 border relative"><button onclick="this.parentElement.remove()" class="absolute right-2 top-2 text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="relative"><label class="text-xs font-bold text-gray-400">CUSTOMER</label><input type="text" value="${d?d.name:''}" class="w-full p-2 border rounded mt-1 bg-white" placeholder="Search..." onkeyup="searchRepCust(this)"><div class="absolute z-10 bg-white w-full max-h-40 overflow-auto shadow hidden rounded border res-box"></div><input type="hidden" class="r-id" value="${d?d.id:''}"><input type="hidden" class="r-nm" value="${d?d.name:''}"></div><div class="md:col-span-2"><label class="text-xs font-bold text-gray-400">OUTCOME</label><input type="text" class="r-note w-full p-2 border rounded mt-1 bg-white" placeholder="Result..."></div></div></div>`; }
-        function searchRepCust(inp) { const val = inp.value.toLowerCase(); const box = inp.nextElementSibling; if(val.length<1) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); myCustomers.filter(c=>c.name.toLowerCase().includes(val)).slice(0,5).forEach(c=>{ const d = document.createElement('div'); d.className="p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText=c.name; d.onclick=()=>{ inp.value=c.name; inp.parentElement.querySelector('.r-id').value=c.id; inp.parentElement.querySelector('.r-nm').value=c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
+        function addReportRow(d=null) { document.getElementById('reportRows').innerHTML += `<div class="bg-gray-50 p-4 rounded mb-2 border relative"><button onclick="this.parentElement.remove()" class="absolute right-2 top-2 text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="relative"><label class="text-xs font-bold text-gray-400">CUSTOMER</label><input type="text" value="${d?d.name:''}" class="w-full p-2 border rounded mt-1 bg-white" placeholder="Search..." onkeyup="searchRepCust(this, '${Date.now()+Math.random()}')"><div id="res-${Date.now()+Math.random()}" class="absolute z-10 bg-white w-full max-h-40 overflow-auto shadow hidden rounded border"></div><input type="hidden" class="r-id" value="${d?d.id:''}"><input type="hidden" class="r-nm" value="${d?d.name:''}"></div><div class="md:col-span-2"><label class="text-xs font-bold text-gray-400">OUTCOME</label><input type="text" class="r-note w-full p-2 border rounded mt-1 bg-white" placeholder="Result..."></div></div></div>`; }
+        function searchRepCust(inp, id) { const val = inp.value.toLowerCase(); const box = inp.nextElementSibling; if(val.length<1) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); myCustomers.filter(c=>c.name.toLowerCase().includes(val)).slice(0,5).forEach(c=>{ const d = document.createElement('div'); d.className="p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText=c.name; d.onclick=()=>{ inp.value=c.name; inp.parentElement.querySelector('.r-id').value=c.id; inp.parentElement.querySelector('.r-nm').value=c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
         
-        // WhatsApp Share Fix from 10.9
         function submitReport() { 
-            const batch = db.batch(); let hasData = false;
-            let waMessage = `*Daily Visit Report*\n*Rep:* ${currentUser.name}\n*Date:* ${new Date().toLocaleDateString()}\n---\n`; let count = 1;
-            document.querySelectorAll('.r-id').forEach(el => { const nm = el.parentElement.querySelector('.r-nm').value; const nt = el.parentElement.parentElement.parentElement.querySelector('.r-note').value; if(nm && nt) { batch.set(db.collection('reports').doc(), { date: new Date().toISOString(), customerId: el.value, customerName: nm, note: nt, repCode: currentUser.code, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); waMessage += `${count}. *${nm}*\n   ${nt}\n\n`; hasData = true; count++; } }); 
+            const batch = db.batch(); 
+            let hasData = false;
+            let waMessage = `*Daily Visit Report*\n*Rep:* ${currentUser.name}\n*Date:* ${new Date().toLocaleDateString()}\n------------------\n`;
+            let count = 1;
+
+            document.querySelectorAll('.r-id').forEach(el => { 
+                const nm = el.parentElement.querySelector('.r-nm').value; 
+                const nt = el.parentElement.parentElement.parentElement.querySelector('.r-note').value; 
+                
+                if(nm && nt) { 
+                    batch.set(db.collection('reports').doc(), { 
+                        date: new Date().toISOString(), 
+                        customerId: el.value, 
+                        customerName: nm, 
+                        note: nt, 
+                        repCode: currentUser.code, 
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                    }); 
+                    
+                    waMessage += `${count}. *${nm}*\n   Outcome: ${nt}\n\n`;
+                    hasData = true; 
+                    count++;
+                } 
+            }); 
+            
             if(!hasData) return alert("Fill data"); 
+            
             window.open(`https://wa.me/?text=${encodeURIComponent(waMessage)}`, '_blank');
-            batch.commit().then(() => { closeReportModal(); });
+            
+            batch.commit().then(() => {
+                closeReportModal(); 
+            }).catch(error => {
+                console.error("Error saving report:", error);
+            });
         }
 
-        // ★★★ ATTENDANCE FEATURES ★★★
+        // ★★★ ATTENDANCE FEATURES (Client Side) ★★★
         async function openAttendanceModal() {
             document.getElementById('attendanceModal').classList.remove('hidden');
             const now = new Date();
             const startStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
             const endStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-31`;
 
-            // Get Work Days (Unique dates clocked in)
+            // Get Work Days
             const logSnap = await db.collection('attendance_logs')
                 .where('repCode', '==', currentUser.code)
                 .where('dateString', '>=', startStr).where('dateString', '<=', endStr).get();
@@ -623,7 +954,7 @@
             logSnap.forEach(d => workDays.add(d.data().dateString));
             document.getElementById('statWorkDays').innerText = workDays.size;
 
-            // Get Leave Days (Approved sum)
+            // Get Leave Days
             const leaveSnap = await db.collection('leave_requests')
                 .where('repCode', '==', currentUser.code)
                 .where('status', '==', 'approved')
@@ -676,56 +1007,182 @@
             document.getElementById('leaveReason').value = '';
         }
 
-        // ★★★ CART / ORDER SYSTEM ★★★
-        // Existing Product & Request logic needs modification to support Cart
+        // ================= PRODUCT, CART & REQUEST WORKFLOW =================
         function openProductPage() { document.getElementById('productSearchPage').classList.remove('hidden'); renderCartFab(); }
-        function closeProductPage() { document.getElementById('productSearchPage').classList.add('hidden'); }
-        
+        function closeProductPage() { document.getElementById('productSearchPage').classList.add('hidden'); resetRequestButton(); }
+
+        function toggleRequestSidebar() {
+            const sidebar = document.getElementById('requestSidebar');
+            if (sidebar.classList.contains('req-sidebar-closed')) {
+                sidebar.classList.remove('req-sidebar-closed');
+                sidebar.classList.add('req-sidebar-open');
+                listenForHistory(); 
+            } else {
+                sidebar.classList.add('req-sidebar-closed');
+                sidebar.classList.remove('req-sidebar-open');
+            }
+        }
+
+        function listenForHistory() {
+            if(!currentUser || currentUser.isAdmin) return;
+            db.collection('pdf_requests')
+              .where('repCode', '==', currentUser.code)
+              .onSnapshot(snapshot => {
+                  let requests = [];
+                  snapshot.forEach(doc => requests.push(doc.data()));
+                  requests.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                  let html = '';
+                  if (requests.length === 0) {
+                      html = '<div class="text-center text-gray-400 mt-4 text-xs">No history yet.</div>';
+                  } else {
+                      requests.forEach(data => {
+                          let statusBadge = '';
+                          let actionBtn = '';
+                          
+                          if(data.status === 'pending') statusBadge = '<span class="text-xs bg-yellow-100 text-yellow-800 px-2 rounded">Pending</span>';
+                          if(data.status === 'rejected') statusBadge = '<span class="text-xs bg-red-100 text-red-800 px-2 rounded">Rejected</span>';
+                          if(data.status === 'approved') {
+                              statusBadge = '<span class="text-xs bg-green-100 text-green-800 px-2 rounded">Ready</span>';
+                              actionBtn = `<button onclick="downloadPdfFromHistory('${data.query}')" class="text-blue-600 hover:underline text-xs ml-2"><i class="fa-solid fa-download"></i></button>`;
+                          }
+
+                          html += `
+                            <div class="bg-white p-3 rounded shadow-sm border mb-2">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-sm text-gray-700">${data.query}</span>
+                                    ${statusBadge}
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[10px] text-gray-400">${data.timestamp ? new Date(data.timestamp.seconds*1000).toLocaleDateString() : ''}</span>
+                                    ${actionBtn}
+                                </div>
+                            </div>`;
+                      });
+                  }
+                  document.getElementById('myRequestList').innerHTML = html;
+              });
+        }
+
+        function downloadPdfFromHistory(query) {
+            const searchTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+            let forceNew = (query.toLowerCase() === 'new');
+            let forceOld = (query.toLowerCase() === 'old');
+
+            const filtered = allProductData.filter(p => {
+                if (forceNew) return p.isNew === '1' && p.stock > 0;
+                if (forceOld) return p.isNew === '2' && p.stock > 0;
+                const productString = (p.name + " " + p.code).toLowerCase();
+                return searchTerms.every(term => productString.includes(term)) && p.stock > 0;
+            });
+
+            if(filtered.length === 0) return alert("Data mismatch. Cannot regenerate.");
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const now = new Date();
+            const safeQuery = query.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); 
+            const fileName = `${safeQuery}_${now.toISOString().slice(0,10)}.pdf`;
+
+            doc.setFontSize(18); doc.text("Product Availability List", 14, 20);
+            doc.setFontSize(10); doc.text(`Generated by: ${currentUser ? currentUser.name : 'Guest'}`, 14, 28);
+            doc.text(`Search: ${query}`, 14, 33); doc.text(`Date: ${now.toLocaleString()}`, 14, 38);
+
+            const tableData = filtered.map(p => {
+                let pName = p.name;
+                if (!forceNew && p.isNew === '1') { pName += " (New Arrivals)"; }
+                let displayPrice = (p.promo && p.promo !== "0") ? p.promo : p.price;
+                return [String(p.code), String(pName), String(displayPrice)];
+            });
+
+            doc.autoTable({
+                startY: 45, head: [['Code', 'Product Name', 'Price']], body: tableData,
+                theme: 'striped', headStyles: { fillColor: [30, 58, 138] }, rowPageBreak: 'avoid',
+                styles: { fontSize: 10, cellPadding: 3, overflow: 'linebreak' }, columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+            });
+
+            doc.save(fileName); 
+        }
+
+        function listenForPdfStatus() {
+            if(!currentUser || currentUser.isAdmin) return;
+            db.collection('pdf_requests')
+              .where('repCode', '==', currentUser.code)
+              .where('status', 'in', ['pending', 'approved', 'rejected'])
+              .onSnapshot(snapshot => {
+                  snapshot.docChanges().forEach(change => {
+                      if (change.type === "added" || change.type === "modified") {
+                          const data = change.doc.data();
+                          const currentInput = document.getElementById('productSearchInput').value;
+                          if (data.query === currentInput) updateButtonState(data.status);
+                      }
+                  });
+              });
+        }
+
         function handleProductSearch(val) {
             const container = document.getElementById('productResultsContainer');
             if (!val || val.length < 2) { 
                 currentProductResults = []; 
-                container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Search products.</p></div>`; 
+                container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Type to search.</p></div>`; 
                 return; 
             }
-            // Search logic (New/Old/Text)
-            let searchTerms = [], forceNew=false, forceOld=false;
-            if (val.toLowerCase() === 'new') forceNew = true; else if (val.toLowerCase() === 'old') forceOld = true; else searchTerms = val.toLowerCase().split(/\s+/).filter(t => t.length > 0);
             
+            let searchTerms = []; let forceNew = false; let forceOld = false;
+            if (val.toLowerCase() === 'new') { forceNew = true; } else if (val.toLowerCase() === 'old') { forceOld = true; } else { searchTerms = val.toLowerCase().split(/\s+/).filter(t => t.length > 0); }
+
             currentProductResults = allProductData.filter(p => {
                 if (forceNew) return p.isNew === '1' && p.stock > 0;
                 if (forceOld) return p.isNew === '2' && p.stock > 0;
-                const str = (p.name + " " + p.code).toLowerCase();
-                return searchTerms.every(t => str.includes(t)) && p.stock > 0;
+                const productString = (p.name + " " + p.code).toLowerCase();
+                return searchTerms.every(term => productString.includes(term)) && p.stock > 0;
             });
 
-            if(currentProductResults.length === 0) { container.innerHTML = `<div class="text-center text-gray-400 mt-10"><p>No results.</p></div>`; return; }
+            document.getElementById('productCountBadge').innerText = `${currentProductResults.length} found`;
+            checkExistingRequest(val);
 
-            // Render with Add/Remove buttons
+            if(currentProductResults.length === 0) {
+                 container.innerHTML = `<div class="text-center text-gray-400 mt-10"><p>No results.</p></div>`;
+                 return;
+            }
+
+            // ★ Render with Add/Remove buttons for Cart ★
             container.innerHTML = currentProductResults.map(p => {
                 const inCart = cartItems.find(i => i.code === p.code);
                 const qty = inCart ? inCart.qty : 0;
-                let priceDisplay = p.price;
-                if (p.promo && p.promo !== "0") priceDisplay = `<span class="text-red-600 font-bold">${p.promo}</span> <span class="text-xs line-through text-gray-400">${p.price}</span>`;
                 
+                let priceHtml = `<div class="text-xl font-bold text-primary">${p.price}</div>`;
+                if (p.promo && p.promo !== "0" && p.promo !== "") {
+                    priceHtml = `
+                        <div class="flex flex-col items-end">
+                            <div class="text-xs text-gray-400 line-through">${p.price}</div>
+                            <div class="text-xl font-bold text-red-600">${p.promo}</div>
+                        </div>
+                    `;
+                }
+
                 return `
-                <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
                     <div class="flex-1">
-                        <div class="font-bold text-gray-800 text-sm leading-tight">${p.name}</div>
-                        <div class="text-xs text-gray-500 bg-gray-100 inline-block px-1 rounded mt-1">${p.code} ${p.isNew==='1'?'<span class="text-red-500 font-bold">NEW</span>':''}</div>
+                        <div class="font-bold text-gray-800 text-lg flex items-center">
+                            ${p.name} 
+                            ${p.isNew === '1' ? '<span class="badge-new">NEW</span>' : ''}
+                        </div>
+                        <div class="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded mt-1">CODE: ${p.code}</div>
                     </div>
                     <div class="flex flex-col items-end pl-2">
-                        <div class="mb-2 text-sm">${priceDisplay}</div>
-                        <div class="flex items-center space-x-2 bg-gray-50 rounded p-1">
-                            <button onclick="updateCart('${p.code}', -1)" class="w-6 h-6 bg-gray-200 rounded-full text-gray-600 font-bold">-</button>
-                            <span class="text-sm font-bold w-4 text-center" id="qty-${p.code}">${qty}</span>
-                            <button onclick="updateCart('${p.code}', 1)" class="w-6 h-6 bg-primary text-white rounded-full font-bold">+</button>
+                        <div class="mb-2 text-right">${priceHtml}</div>
+                        <div class="flex items-center space-x-3 bg-gray-50 rounded p-1">
+                            <button onclick="updateCart('${p.code}', -1)" class="w-8 h-8 bg-gray-200 rounded-full text-gray-600 font-bold hover:bg-gray-300">-</button>
+                            <span class="text-base font-bold w-6 text-center" id="qty-${p.code}">${qty}</span>
+                            <button onclick="updateCart('${p.code}', 1)" class="w-8 h-8 bg-primary text-white rounded-full font-bold hover:bg-blue-800">+</button>
                         </div>
                     </div>
                 </div>`;
             }).join('');
         }
 
+        // ★★★ CART LOGIC ★★★
         function updateCart(code, change) {
             const product = allProductData.find(p => p.code === code);
             if(!product) return;
@@ -734,7 +1191,13 @@
             if(!item) {
                 if(change > 0) {
                     const finalPrice = (product.promo && product.promo!=="0") ? product.promo : product.price;
-                    item = { code: code, name: product.name, price: parseFloat(finalPrice.replace(/[^0-9.]/g, '')), qty: 0 };
+                    item = { 
+                        code: code, 
+                        name: product.name, 
+                        // Strip currency symbol if present for math
+                        price: parseFloat(finalPrice.replace(/[^0-9.]/g, '')), 
+                        qty: 0 
+                    };
                     cartItems.push(item);
                 } else return;
             }
@@ -750,7 +1213,6 @@
         }
 
         function renderCartFab() {
-            const total = cartItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
             const badge = document.getElementById('cartTotalBadge');
             badge.innerText = cartItems.length;
             badge.classList.toggle('hidden', cartItems.length === 0);
@@ -826,18 +1288,101 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // PDF Request & History (Existing)
-        function toggleRequestSidebar() { /* same */ const s=document.getElementById('requestSidebar'); if(s.classList.contains('req-sidebar-closed')){s.classList.remove('req-sidebar-closed');s.classList.add('req-sidebar-open');listenForHistory()}else{s.classList.add('req-sidebar-closed');s.classList.remove('req-sidebar-open')} }
-        function listenForHistory() { /* same */ if(!currentUser||currentUser.isAdmin)return; db.collection('pdf_requests').where('repCode','==',currentUser.code).onSnapshot(s=>{ let h=''; s.forEach(d=>{ const r=d.data(); if(r.status==='approved') h+=`<div class="bg-white p-2 rounded shadow mb-2 text-xs border-l-4 border-green-500"><div>${r.query}</div><button onclick="downloadPdfFromHistory('${r.query}')" class="text-blue-600 underline">Download</button></div>`; else h+=`<div class="bg-white p-2 rounded shadow mb-2 text-xs border-l-4 border-yellow-500">${r.query} (${r.status})</div>` }); document.getElementById('myRequestList').innerHTML=h||'<div class="text-gray-400 text-center mt-4">Empty</div>'; }) }
-        function downloadPdfFromHistory(q) { /* same logic for PDF gen */ alert("Re-generating PDF for: " + q); /* Simplified for brevity, assume works like before */ }
-        function requestPdfApproval() { const q=document.getElementById('productSearchInput').value; if(q.length<2)return alert("Enter search"); db.collection('pdf_requests').add({repCode:currentUser.code, repName:currentUser.name, query:q, status:'pending', timestamp:firebase.firestore.FieldValue.serverTimestamp()}); alert("Requested"); }
-        function listenForPdfStatus(){ /* ... */ }
+        async function checkExistingRequest(query) {
+            const snap = await db.collection('pdf_requests').where('repCode', '==', currentUser.code).where('query', '==', query).orderBy('timestamp', 'desc').limit(1).get();
+            if (!snap.empty) updateButtonState(snap.docs[0].data().status);
+        }
 
-        // Load Assign Tasks logic same as before...
-        async function loadAssignedTasksForRep() { const s=await db.collection('admin_tasks').where('repCode','==',currentUser.code).where('status','==','pending').get(); adminTasks=[]; s.forEach(d=>adminTasks.push({docId:d.id,...d.data()})); }
-        function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); const c=document.getElementById('acceptTaskList'); c.innerHTML=adminTasks.map(t=>`<div class="bg-white p-3 rounded shadow mb-2 flex justify-between"><div>${t.customerName}</div><button onclick="addTaskToToday('${t.docId}','${t.customerId}')" class="bg-primary text-white px-2 rounded">Accept</button></div>`).join('')||'No tasks'; document.getElementById('assignedCountBadge').innerText=adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden',adminTasks.length===0); }
-        function addTaskToToday(did,cid) { addToTask(cid); db.collection('admin_tasks').doc(did).update({status:'completed'}); adminTasks=adminTasks.filter(t=>t.docId!==did); toggleAssignedModal(); updateAssignedBadge(); }
-        function updateAssignedBadge() { document.getElementById('assignedCountBadge').innerText=adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden',adminTasks.length===0); }
+        function resetRequestButton() {
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
+            btn.style.background = ""; btn.onclick = requestPdfApproval; btn.disabled = false;
+            text.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
+            currentPdfBlobUrl = null;
+        }
+
+        function updateButtonState(status) {
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            if (status === 'pending') {
+                btn.className = "bg-gray-400 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px] cursor-not-allowed";
+                text.innerHTML = '<i class="fa-solid fa-clock mr-2"></i> Pending Approval...';
+                btn.onclick = null;
+            } else if (status === 'approved') {
+                btn.className = "relative overflow-hidden bg-accent hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
+                text.innerHTML = '<i class="fa-solid fa-download mr-2"></i> Download PDF';
+                btn.onclick = downloadPdfProcess; 
+            } else if (status === 'rejected') {
+                btn.className = "bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px]";
+                text.innerHTML = '<i class="fa-solid fa-ban mr-2"></i> Rejected';
+            }
+        }
+
+        function requestPdfApproval() {
+            if (currentProductResults.length === 0) return alert("Search for products first!");
+            const query = document.getElementById('productSearchInput').value;
+            db.collection('pdf_requests').add({ repCode: currentUser.code, repName: currentUser.name, query: query, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            updateButtonState('pending');
+        }
+
+        function downloadPdfProcess() {
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            btn.onclick = null; 
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                btn.style.background = `linear-gradient(90deg, #2563eb ${progress}%, #f59e0b ${progress}%)`;
+                text.innerText = `${progress}%`;
+                if (progress >= 100) { clearInterval(interval); generateAndReadyPDF(); }
+            }, 30);
+        }
+
+        function generateAndReadyPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const query = document.getElementById('productSearchInput').value;
+            const now = new Date();
+            const safeQuery = query.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); 
+            const fileName = `${safeQuery}_${now.toISOString().slice(0,10)}.pdf`;
+
+            doc.setFontSize(18); doc.text("Product Availability List", 14, 20);
+            doc.setFontSize(10); doc.text(`Generated by: ${currentUser ? currentUser.name : 'Guest'}`, 14, 28);
+            doc.text(`Search: ${query}`, 14, 33); doc.text(`Date: ${now.toLocaleString()}`, 14, 38);
+
+            const isFullNewSearch = (query.toLowerCase() === 'new');
+            
+            const tableData = currentProductResults.map(p => {
+                let pName = p.name;
+                if (!isFullNewSearch && p.isNew === '1') { pName += " (New Arrivals)"; }
+                
+                let displayPrice = p.price;
+                if (p.promo && p.promo !== "0" && p.promo !== "") {
+                    displayPrice = p.promo; 
+                }
+
+                return [String(p.code), String(pName), String(displayPrice)];
+            });
+
+            doc.autoTable({
+                startY: 45, head: [['Code', 'Product Name', 'Price']], body: tableData,
+                theme: 'striped', headStyles: { fillColor: [30, 58, 138] }, rowPageBreak: 'avoid',
+                styles: { fontSize: 10, cellPadding: 3, overflow: 'linebreak' }, columnStyles: { 0: { cellWidth: 35 }, 2: { cellWidth: 35 } }
+            });
+
+            doc.save(fileName); 
+
+            const blob = doc.output('blob');
+            currentPdfBlobUrl = URL.createObjectURL(blob);
+
+            const btn = document.getElementById('btnRequestPDF');
+            const text = document.getElementById('btnRequestText');
+            btn.style.background = "";
+            btn.className = "bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px]";
+            text.innerHTML = '<i class="fa-solid fa-folder-open mr-2"></i> Open PDF';
+            btn.onclick = () => window.open(currentPdfBlobUrl, '_blank');
+        }
     </script>
 </body>
 </html>
