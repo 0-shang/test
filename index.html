@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.7</title>
+    <title>Sales Master Pro 11.8</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -515,13 +515,21 @@
         let cartItems = []; 
         let cartCustomer = null; 
 
+        // Update 1: Add New Users
         const repDirectory = {
             "10543": "Beny",
             "10882": "Prince",
             "10989": "Abigail",
             "11006": "Hilda",
-            "11029": "Linda"
+            "11029": "Linda",
+            // New Users
+            "11033": "商宇琛",
+            "10974": "徐亮",
+            "11077": "李勇辉",
+            "10848": "朱立刚"
         };
+
+        const vipUsers = ["11033", "10974", "11077", "10848"];
 
         // --- Fast Session Check ---
         try {
@@ -554,7 +562,8 @@
             if(saved) { 
                 const user = JSON.parse(saved); 
                 document.getElementById('loginRepCode').value = user.code === 'admin' ? 'admin' : user.code; 
-                document.getElementById('loginPassword').value = user.code === 'admin' ? '8888' : '0000'; 
+                // Set placeholder pass just to fill input
+                document.getElementById('loginPassword').value = '****'; 
                 
                 document.body.classList.add('loaded'); 
                 document.getElementById('loginSection').classList.add('hidden');
@@ -658,8 +667,30 @@
                 return; 
             } 
             
-            // Rep
-            if (pass !== '0000') { 
+            // Check if VIP (Password 6666)
+            if (vipUsers.includes(code)) {
+                if (pass !== '6666' && pass !== '****') { // **** check is for silent re-login bypass
+                     if(!silent) { status.innerText = "Wrong Password"; status.classList.remove('hidden'); resetLoginBtn(); }
+                     return;
+                }
+                // Determine Name
+                let finalName = repDirectory[code] || "VIP User";
+                if(allSalesData.length > 0) myCustomers = allSalesData.filter(c => c.repCode == code); 
+                currentUser = { code: code, name: finalName, isAdmin: false, isVip: true }; 
+                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
+                await refreshData(); 
+                document.getElementById('loginSection').classList.add('hidden'); 
+                document.getElementById('appSection').classList.remove('hidden'); 
+                document.body.classList.add('loaded'); 
+                document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; 
+                listenForPdfStatus(); 
+                listenForHistory(); 
+                if(!silent) resetLoginBtn();
+                return;
+            }
+
+            // Standard Rep (Password 0000)
+            if (pass !== '0000' && pass !== '****') { 
                 if(!silent) { status.innerText = "Wrong Password"; status.classList.remove('hidden'); resetLoginBtn(); }
                 return; 
             } 
@@ -668,7 +699,7 @@
             if (repDirectory[code]) {
                 let finalName = repDirectory[code];
                 if(allSalesData.length > 0) myCustomers = allSalesData.filter(c => c.repCode == code); 
-                currentUser = { code: code, name: finalName, isAdmin: false }; 
+                currentUser = { code: code, name: finalName, isAdmin: false, isVip: false }; 
                 localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
                 await refreshData(); 
                 document.getElementById('loginSection').classList.add('hidden'); 
@@ -685,7 +716,7 @@
             const customers = allSalesData.filter(c => c.repCode == code); 
             if (customers.length > 0) { 
                  myCustomers = customers;
-                 currentUser = { code: code, name: customers[0].csvRepName, isAdmin: false };
+                 currentUser = { code: code, name: customers[0].csvRepName, isAdmin: false, isVip: false };
                  localStorage.setItem('salesMasterUser', JSON.stringify(currentUser));
                  await refreshData();
                  document.getElementById('loginSection').classList.add('hidden');
@@ -731,7 +762,7 @@
                 const statusColor = isDone ? 'text-green-600' : 'text-orange-500';
                 const div = document.createElement('div');
                 div.className = `p-3 rounded border flex justify-between items-center ${isDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`;
-                div.innerHTML = `<div><div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div><div class="text-xs text-gray-500 mt-1">${t.assignedDate} | ${t.taskDetail}</div><div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div></div><div>${isDone ? `<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs underline font-bold">Undo</button>` : `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-rotate-left"></i></button>`}</div></div>`;
+                div.innerHTML = `<div><div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div><div class="text-xs text-gray-500 mt-1">${t.assignedDate} | ${t.taskDetail}</div><div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div></div><div>${isDone ? `<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs underline font-bold">Undo</button>` : `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-rotate-left"></i></button>`}</div>`;
                 container.appendChild(div);
             });
         }
@@ -1352,11 +1383,31 @@
 
         function requestPdfApproval() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
-            // No filter check required anymore
-            
             const query = document.getElementById('productSearchInput').value;
-            db.collection('pdf_requests').add({ repCode: currentUser.code, repName: currentUser.name, query: query, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-            updateButtonState('pending');
+            
+            // NEW LOGIC: VIP Instant Approve
+            if (currentUser && currentUser.isVip) {
+                // Immediate 'approved' status
+                db.collection('pdf_requests').add({
+                    repCode: currentUser.code,
+                    repName: currentUser.name,
+                    query: query,
+                    status: 'approved',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                // Manually trigger UI update to 'Download' state immediately
+                updateButtonState('approved');
+            } else {
+                // Standard Logic: Pending
+                db.collection('pdf_requests').add({
+                    repCode: currentUser.code,
+                    repName: currentUser.name,
+                    query: query,
+                    status: 'pending',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                updateButtonState('pending');
+            }
         }
 
         function downloadPdfProcess() {
