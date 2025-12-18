@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.6</title>
+    <title>Sales Master Pro 11.7</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -731,7 +731,7 @@
                 const statusColor = isDone ? 'text-green-600' : 'text-orange-500';
                 const div = document.createElement('div');
                 div.className = `p-3 rounded border flex justify-between items-center ${isDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`;
-                div.innerHTML = `<div><div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div><div class="text-xs text-gray-500 mt-1">${t.assignedDate} | ${t.taskDetail}</div><div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div></div><div>${isDone ? `<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs underline font-bold">Undo</button>` : `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-rotate-left"></i></button>`}</div>`;
+                div.innerHTML = `<div><div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div><div class="text-xs text-gray-500 mt-1">${t.assignedDate} | ${t.taskDetail}</div><div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div></div><div>${isDone ? `<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs underline font-bold">Undo</button>` : `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-rotate-left"></i></button>`}</div></div>`;
                 container.appendChild(div);
             });
         }
@@ -925,14 +925,18 @@
             let forceNew = (query.toLowerCase() === 'new');
             let forceOld = (query.toLowerCase() === 'old');
 
+            // Same filtering logic as generateAndReadyPDF (exclude out of stock)
             const filtered = allProductData.filter(p => {
-                if (forceNew) return p.isNew === '1' && p.stock > 0;
-                if (forceOld) return p.isNew === '2' && p.stock > 0;
+                if (p.stock <= 0) return false; // Exclude out of stock
+                
+                if (forceNew) return p.isNew === '1';
+                if (forceOld) return p.isNew === '2';
+                
                 const productString = (p.name + " " + p.code).toLowerCase();
-                return searchTerms.every(term => productString.includes(term)) && p.stock > 0;
+                return searchTerms.every(term => productString.includes(term));
             });
 
-            if(filtered.length === 0) return alert("Data mismatch. Cannot regenerate.");
+            if(filtered.length === 0) return alert("Data mismatch or no stock available for this query.");
             
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -1008,23 +1012,17 @@
             });
 
             // Update Request PDF button state
-            // Logic: If user selected 'In Stock Only', enable the button.
-            // Even if search results are empty, the intention is to check against filter.
-            // But realistically, we need at least some query or filter action.
+            // Logic: Always active if there is a query or results
             const reqBtn = document.getElementById('btnRequestPDF');
-            if (filterMode === 'stock') {
-                reqBtn.disabled = false;
-                reqBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
-                reqBtn.classList.add('bg-primary', 'hover:bg-blue-900');
-                
-                // If there's an existing request matching this exact search text, reflect status
-                if(val) checkExistingRequest(val);
-                else updateButtonState('ready'); // Or just leave enabled
-            } else {
-                reqBtn.disabled = true;
-                reqBtn.classList.remove('bg-primary', 'hover:bg-blue-900');
-                reqBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
-                document.getElementById('btnRequestText').innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
+            
+            reqBtn.disabled = false;
+            reqBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+            reqBtn.classList.add('bg-primary', 'hover:bg-blue-900');
+            
+            if(val) checkExistingRequest(val);
+            else {
+                 // Reset text if no specific query matched yet
+                 document.getElementById('btnRequestText').innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
             }
 
             if(currentProductResults.length === 0) {
@@ -1301,7 +1299,8 @@
 
         function downloadCartCsv() {
             if(cartItems.length === 0) return alert("Cart is empty");
-            
+            if(!cartCustomer) return alert("Please select a customer first."); // Validation Added
+
             // Format: Row 1 Empty. Row 2+: Code, A, Qty
             let csv = "\n"; 
             cartItems.forEach(i => {
@@ -1325,16 +1324,11 @@
         function resetRequestButton() {
             const btn = document.getElementById('btnRequestPDF');
             const text = document.getElementById('btnRequestText');
-            // Logic based on select value
-            const filterMode = document.getElementById('productFilterSelect').value;
-            
-            if(filterMode === 'stock') {
-                btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
-                btn.onclick = requestPdfApproval; btn.disabled = false;
-            } else {
-                btn.className = "bg-gray-300 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px] cursor-not-allowed";
-                btn.onclick = null; btn.disabled = true;
-            }
+            // Always active default state
+            btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
+            btn.onclick = requestPdfApproval; 
+            btn.disabled = false;
+
             text.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
             currentPdfBlobUrl = null;
         }
@@ -1358,8 +1352,7 @@
 
         function requestPdfApproval() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
-            const filterMode = document.getElementById('productFilterSelect').value;
-            if (filterMode !== 'stock') return alert("Please select 'In Stock Only' to request PDF.");
+            // No filter check required anymore
             
             const query = document.getElementById('productSearchInput').value;
             db.collection('pdf_requests').add({ repCode: currentUser.code, repName: currentUser.name, query: query, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
@@ -1393,7 +1386,10 @@
 
             const isFullNewSearch = (query.toLowerCase() === 'new');
             
-            const tableData = currentProductResults.map(p => {
+            // Filter: Ensure ONLY items with stock > 0 are in the PDF
+            const pdfItems = currentProductResults.filter(p => p.stock > 0);
+            
+            const tableData = pdfItems.map(p => {
                 let pName = p.name;
                 if (!isFullNewSearch && p.isNew === '1') { pName += " (New Arrivals)"; }
                 
