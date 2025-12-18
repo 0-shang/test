@@ -1,10 +1,9 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.3</title>
+    <title>Sales Master Pro 11.4</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -61,7 +60,6 @@
             "background_color": "#1e40af",
             "theme_color": "#1e40af",
             "orientation": "portrait"
-            // "icons": [] // Hidden to avoid white splash screen
         };
         const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
         const link = document.createElement('link'); link.rel = 'manifest'; link.href = URL.createObjectURL(blob); document.head.appendChild(link);
@@ -109,13 +107,10 @@
         /* Cart FAB */
         .cart-fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: #f59e0b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 70; transition: transform 0.2s; }
         .cart-fab:active { transform: scale(0.9); }
-
-        /* Calendar Styles */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e5e7eb; border: 1px solid #e5e7eb; }
-        .calendar-header { background-color: #1e3a8a; color: white; padding: 8px 0; text-align: center; font-size: 0.75rem; font-weight: bold; }
-        .calendar-day { background-color: white; min-height: 80px; padding: 4px; display: flex; flex-direction: column; justify-content: flex-start; }
-        .calendar-date-num { font-size: 0.8rem; font-weight: bold; color: #374151; margin-bottom: 4px; }
-        .cal-event { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; text-align: center; color: white; line-height: 1.2; }
+        
+        /* Filter Button Active State */
+        .filter-active { background-color: #f59e0b; color: white; border-color: #f59e0b; }
+        .filter-inactive { background-color: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
     </style>
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
@@ -158,7 +153,7 @@
                 <button onclick="switchAdminTab('assign')" id="btnTabAssign" class="flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent">Assign</button>
                 <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Tasks</button>
                 <button onclick="switchAdminTab('reports')" id="btnTabReports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Reports</button>
-                <button onclick="switchAdminTab('attendance')" id="btnTabAttendance" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Attendance</button>
+                <!-- Attendance Tab Removed -->
                 <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Req Logs</button>
             </div>
         </header>
@@ -232,61 +227,7 @@
                 </div>
             </div>
 
-            <!-- ★★★ Updated Admin Attendance Tab (Calendar) ★★★ -->
-            <div id="adminTabAttendance" class="max-w-6xl mx-auto hidden space-y-4">
-                <div class="bg-white p-4 rounded shadow mb-4">
-                    <div class="flex flex-col md:flex-row gap-3">
-                        <div class="w-full md:w-auto">
-                            <label class="text-[10px] text-gray-500 font-bold block mb-1">MONTH</label>
-                            <input type="month" id="adminAttMonth" class="w-full p-2 border rounded text-sm bg-gray-50">
-                        </div>
-                        <div class="w-full md:w-auto">
-                            <label class="text-[10px] text-gray-500 font-bold block mb-1">REP</label>
-                            <select id="adminAttRep" class="w-full p-2 border rounded text-sm bg-gray-50">
-                                <option value="">Select Rep (Required)</option>
-                            </select>
-                        </div>
-                        <div class="w-full md:w-auto flex items-end">
-                            <button onclick="loadAdminAttendance()" class="bg-primary text-white px-6 py-2 rounded text-sm font-bold shadow w-full">
-                                <i class="fa-solid fa-magnifying-glass mr-1"></i> QUERY
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="adminCalendarContainer" class="hidden">
-                     <h3 class="font-bold text-gray-700 mb-2 flex justify-between items-center">
-                        <span id="calTitle">Attendance Calendar</span>
-                        <div class="text-xs font-normal">
-                            <span class="inline-block w-3 h-3 bg-green-500 rounded-sm mr-1"></span>Work
-                            <span class="inline-block w-3 h-3 bg-orange-500 rounded-sm ml-2 mr-1"></span>Leave
-                        </div>
-                     </h3>
-                     <div class="bg-white rounded shadow overflow-hidden">
-                         <div class="calendar-grid">
-                             <div class="calendar-header">SUN</div>
-                             <div class="calendar-header">MON</div>
-                             <div class="calendar-header">TUE</div>
-                             <div class="calendar-header">WED</div>
-                             <div class="calendar-header">THU</div>
-                             <div class="calendar-header">FRI</div>
-                             <div class="calendar-header">SAT</div>
-                             <!-- Days will be injected here -->
-                             <div id="calendarDays" class="col-span-7 grid grid-cols-7 gap-1 bg-gray-200 border-t border-gray-200"></div>
-                         </div>
-                     </div>
-                </div>
-                
-                <div id="adminAttEmptyState" class="text-center text-gray-400 py-10">
-                    <i class="fa-solid fa-filter text-4xl mb-3"></i>
-                    <p>Select Month and Rep, then click Query.</p>
-                </div>
-
-                <div class="space-y-4 mt-8 border-t pt-4">
-                     <h3 class="font-bold text-gray-700 border-l-4 border-orange-500 pl-2">Pending Leave Requests</h3>
-                     <div id="adminLeaveRequests" class="space-y-2"></div>
-                </div>
-            </div>
+            <!-- Admin Attendance Tab Removed -->
 
             <div id="adminTabExports" class="max-w-6xl mx-auto hidden space-y-4">
                 <div class="bg-white p-4 rounded shadow mb-4">
@@ -310,9 +251,7 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button onclick="openAttendanceModal()" class="bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs font-bold mr-1 border border-blue-200">
-                        <i class="fa-solid fa-calendar-check mr-1"></i> Check In
-                    </button>
+                    <!-- Check In Button Removed -->
                     <button onclick="toggleAssignedModal()" class="relative bg-gray-100 hover:bg-blue-50 text-primary p-2 rounded-lg transition mr-2">
                         <i class="fa-solid fa-bell text-xl"></i>
                         <span id="assignedCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
@@ -374,58 +313,6 @@
         </div>
     </div>
 
-    <!-- Attendance Modal -->
-    <div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-60 z-[90] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl flex flex-col overflow-hidden m-4">
-            <div class="p-4 bg-primary text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-user-clock mr-2"></i>My Attendance</h3>
-                <button onclick="closeAttendanceModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button>
-            </div>
-            <div class="p-6 bg-gray-50 flex-1 overflow-y-auto">
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-white p-4 rounded shadow text-center border-l-4 border-green-500">
-                        <div class="text-2xl font-bold text-gray-800" id="statWorkDays">0</div>
-                        <div class="text-xs text-gray-500 uppercase font-bold">Work Days</div>
-                    </div>
-                    <div class="bg-white p-4 rounded shadow text-center border-l-4 border-orange-500">
-                        <div class="text-2xl font-bold text-gray-800" id="statLeaveDays">0</div>
-                        <div class="text-xs text-gray-500 uppercase font-bold">Leave Days</div>
-                    </div>
-                </div>
-                
-                <div class="mb-6 text-center">
-                    <button id="btnClockIn" onclick="clockIn()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg shadow-lg text-lg flex justify-center items-center">
-                        <i class="fa-solid fa-location-dot mr-2"></i> CLOCK IN NOW
-                    </button>
-                    <p class="text-xs text-gray-400 mt-2">Location will be captured.</p>
-                </div>
-
-                <div class="border-t pt-4">
-                    <h4 class="font-bold text-gray-700 mb-3">Request Leave</h4>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="text-xs font-bold text-gray-400">DATE</label>
-                            <input type="date" id="leaveDate" class="w-full p-2 border rounded">
-                        </div>
-                        <div class="flex space-x-2">
-                            <div class="w-1/3">
-                                <label class="text-xs font-bold text-gray-400">DAYS</label>
-                                <input type="number" id="leaveDuration" placeholder="1" class="w-full p-2 border rounded">
-                            </div>
-                            <div class="w-2/3">
-                                <label class="text-xs font-bold text-gray-400">REASON</label>
-                                <input type="text" id="leaveReason" placeholder="Reason..." class="w-full p-2 border rounded">
-                            </div>
-                        </div>
-                        <button onclick="submitLeaveRequest()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded shadow">
-                            Submit Request
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Product List & Request PDF -->
     <div id="productSearchPage" class="fixed inset-0 z-[60] bg-gray-100 hidden flex flex-col h-screen animate-fade-in">
         <div class="bg-primary text-white p-4 shadow-md flex justify-between items-center shrink-0">
@@ -439,17 +326,24 @@
         <div class="p-4 flex flex-col flex-1 overflow-hidden max-w-5xl mx-auto w-full relative">
             <div class="bg-white p-4 rounded-lg shadow-sm mb-4 shrink-0">
                 <div class="flex flex-col md:flex-row gap-3">
-                    <div class="relative flex-1">
-                        <input type="text" id="productSearchInput" placeholder="Ex: POWER RACK NEW" 
-                               class="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent outline-none text-lg"
-                               oninput="handleProductSearch(this.value)">
-                        <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <div class="flex items-center space-x-2 flex-1">
+                         <div class="relative flex-1">
+                            <input type="text" id="productSearchInput" placeholder="Ex: POWER RACK NEW" 
+                                   class="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent outline-none text-lg"
+                                   oninput="handleProductSearch(this.value)">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <!-- Filter Button -->
+                        <button id="btnFilterStock" onclick="toggleStockFilter()" class="w-12 h-12 rounded-lg border flex items-center justify-center transition filter-inactive hover:bg-gray-200" title="Filter In Stock">
+                            <i class="fa-solid fa-filter text-lg"></i>
+                        </button>
                     </div>
                     
-                    <button id="btnRequestPDF" onclick="requestPdfApproval()" class="relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]">
+                    <button id="btnRequestPDF" onclick="requestPdfApproval()" class="relative overflow-hidden bg-gray-300 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]" disabled>
                         <span id="btnRequestText"><i class="fa-solid fa-paper-plane mr-2"></i> Request PDF</span>
                     </button>
                 </div>
+                <div id="filterStatusText" class="text-xs font-bold text-accent mt-1 hidden text-right w-full">Filtering: In Stock & New</div>
             </div>
 
             <div id="productResultsContainer" class="flex-1 overflow-y-auto min-h-0 space-y-3 pb-24 scroll-container">
@@ -474,6 +368,46 @@
                 <button onclick="toggleRequestSidebar()"><i class="fa-solid fa-times text-lg"></i></button>
             </div>
             <div id="myRequestList" class="flex-1 overflow-y-auto p-2 space-y-2 pb-20 bg-gray-50"></div>
+        </div>
+    </div>
+
+    <!-- Product Detail Modal -->
+    <div id="productDetailModal" class="fixed inset-0 bg-black bg-opacity-70 z-[75] hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in relative">
+            <button onclick="closeProductDetail()" class="absolute top-4 right-4 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center z-10"><i class="fa-solid fa-times"></i></button>
+            
+            <div class="p-6 overflow-y-auto max-h-[80vh]">
+                <div class="w-full h-64 bg-gray-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                    <img id="detailImage" src="" class="object-contain h-full w-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0yMSA5djExYTIgMiAwIDAgMS0yIDJIMUM1YTIgMiAwIDAgMS0yLTJWOUMzIDUgNyAyIDExIDJzOCAzIDggN3oiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjExIiByPSI0Ii8+PC9zdmc+'">
+                </div>
+                
+                <div class="mb-2">
+                    <span id="detailCode" class="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-1 rounded"></span>
+                    <span id="detailBadgeNew" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-1 rounded ml-2">NEW</span>
+                </div>
+                
+                <h2 id="detailName" class="text-xl font-bold text-gray-800 leading-tight mb-2"></h2>
+                
+                <div class="flex justify-between items-end border-b pb-4 mb-4">
+                    <div>
+                        <div class="text-xs text-gray-500 font-bold mb-1">PRICE</div>
+                        <div id="detailPrice" class="text-2xl font-bold text-primary"></div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500 font-bold mb-1">STOCK</div>
+                        <div id="detailStock" class="text-xl font-bold text-gray-800"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center space-x-6 mt-4">
+                    <button id="detailBtnSub" class="w-16 h-16 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold text-gray-600 transition"><i class="fa-solid fa-minus"></i></button>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-400 font-bold mb-1">IN CART</div>
+                        <div id="detailQty" class="text-4xl font-bold text-primary w-16">0</div>
+                    </div>
+                    <button id="detailBtnAdd" class="w-16 h-16 rounded-full bg-primary hover:bg-blue-800 flex items-center justify-center text-3xl font-bold text-white shadow-lg transition"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -504,14 +438,19 @@
                 <div class="text-center text-gray-400 mt-10">Cart is empty.</div>
             </div>
             <!-- Cart Footer -->
-            <div class="p-4 border-t bg-white">
-                <div class="flex justify-between items-center mb-4">
+            <div class="p-4 border-t bg-white space-y-3">
+                <div class="flex justify-between items-center">
                     <span class="font-bold text-lg">Total</span>
                     <span class="font-bold text-2xl text-primary" id="cartTotalPrice">0.00</span>
                 </div>
-                <button onclick="shareCartWhatsapp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow flex justify-center items-center">
-                    <i class="fa-brands fa-whatsapp mr-2 text-xl"></i> Share Order
-                </button>
+                <div class="flex space-x-2">
+                    <button onclick="downloadCartCsv()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 rounded-lg shadow flex justify-center items-center">
+                        <i class="fa-solid fa-file-csv mr-2"></i> CSV
+                    </button>
+                    <button onclick="shareCartWhatsapp()" class="flex-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow flex justify-center items-center">
+                        <i class="fa-brands fa-whatsapp mr-2 text-xl"></i> Share
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -560,6 +499,7 @@
         let adminExportLogs = []; 
         let cartItems = []; 
         let cartCustomer = null; 
+        let filterInStock = false; // New global for stock filter
 
         const repDirectory = {
             "10543": "Beny",
@@ -625,7 +565,6 @@
                     renderAdminTasks(); 
                     renderAdminReports();
                     renderAdminRequests();
-                    // Don't auto-load attendance anymore, wait for query
                 } else { 
                     await loadTasksFromCloud(); 
                     await loadHistoryFromCloud(); 
@@ -700,7 +639,7 @@
                 document.getElementById('loginSection').classList.add('hidden'); 
                 document.getElementById('adminSection').classList.remove('hidden'); 
                 document.body.classList.add('loaded');
-                addAssignRow(); initAdminReportFilters(); initAdminAttFilters();
+                addAssignRow(); initAdminReportFilters(); 
                 if(!silent) resetLoginBtn();
                 return; 
             } 
@@ -761,7 +700,7 @@
             const logSnap = await db.collection('export_logs').orderBy('timestamp', 'desc').limit(200).get();
             adminExportLogs = []; logSnap.forEach(doc => adminExportLogs.push({ docId: doc.id, ...doc.data() }));
         }
-        function switchAdminTab(tab) { ['assign','history','reports','attendance','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } if(tab === 'attendance') { initAdminAttFilters(); } }
+        function switchAdminTab(tab) { ['assign','history','reports','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } }
         function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
         
         function renderAdminTasks() { 
@@ -814,123 +753,6 @@
         }
         async function adminApproveRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'approved'}); renderAdminRequests(); }
         async function adminRejectRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'rejected'}); renderAdminRequests(); }
-
-        // ★★★ ADMIN ATTENDANCE LOGIC (Calendar) ★★★
-        function initAdminAttFilters() { 
-            const s = document.getElementById('adminAttRep'); 
-            if(s.options.length>1) return; 
-            for(const [c,n] of Object.entries(repDirectory)) s.innerHTML+=`<option value="${c}">${n}</option>`; 
-            document.getElementById('adminAttMonth').value = new Date().toISOString().slice(0,7);
-        }
-        
-        async function loadAdminAttendance() {
-            const m = document.getElementById('adminAttMonth').value; // YYYY-MM
-            const rep = document.getElementById('adminAttRep').value;
-            
-            if(!m || !rep) return alert("Please select both Month and Rep to query.");
-            
-            // Show Pending Requests
-            const pendSnap = await db.collection('leave_requests').where('status', '==', 'pending').get();
-            const pendCont = document.getElementById('adminLeaveRequests');
-            pendCont.innerHTML = '';
-            if(pendSnap.empty) pendCont.innerHTML = '<div class="text-gray-400 text-xs italic">No pending requests</div>';
-            pendSnap.forEach(doc => {
-                const d = doc.data();
-                pendCont.innerHTML += `
-                    <div class="bg-white p-3 rounded shadow border-l-4 border-orange-500 flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-gray-800">${d.repName}</div>
-                            <div class="text-xs text-gray-500">Starts: ${d.startDate} | ${d.duration} Days</div>
-                            <div class="text-sm italic text-gray-600">"${d.reason}"</div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="updateLeaveStatus('${doc.id}', 'rejected')" class="bg-red-100 text-red-600 px-3 py-1 rounded text-xs font-bold">Reject</button>
-                            <button onclick="updateLeaveStatus('${doc.id}', 'approved')" class="bg-green-100 text-green-600 px-3 py-1 rounded text-xs font-bold">Approve</button>
-                        </div>
-                    </div>`;
-            });
-
-            // Fetch Data for Calendar
-            const startStr = m + "-01";
-            const endStr = m + "-31";
-            let logs = [];
-            
-            // Work logs
-            const logSnap = await db.collection('attendance_logs')
-                .where('repCode', '==', rep)
-                .where('dateString', '>=', startStr).where('dateString', '<=', endStr).get();
-            logSnap.forEach(d => logs.push({...d.data(), type: 'work'}));
-
-            // Leave logs
-            const leaveSnap = await db.collection('leave_requests')
-                .where('repCode', '==', rep)
-                .where('status', '==', 'approved')
-                .where('startDate', '>=', startStr).get();
-            leaveSnap.forEach(d => logs.push({...d.data(), type: 'leave'}));
-
-            renderCalendar(m, logs);
-        }
-
-        function renderCalendar(monthStr, data) {
-            document.getElementById('adminAttEmptyState').classList.add('hidden');
-            document.getElementById('adminCalendarContainer').classList.remove('hidden');
-            
-            const [year, month] = monthStr.split('-').map(Number);
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const startDay = new Date(year, month - 1, 1).getDay(); // 0 = Sun
-            
-            const container = document.getElementById('calendarDays');
-            container.innerHTML = '';
-            
-            // Empty cells before start of month
-            for(let i=0; i<startDay; i++) {
-                container.innerHTML += `<div class="bg-gray-100 h-20"></div>`;
-            }
-
-            // Days
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateKey = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                
-                // Find records for this day
-                const daysEvents = data.filter(item => {
-                    if(item.type === 'work') return item.dateString === dateKey;
-                    if(item.type === 'leave') return item.startDate === dateKey; // Simplified
-                    return false;
-                });
-
-                let eventHtml = '';
-                daysEvents.forEach(ev => {
-                    if(ev.type === 'work') {
-                        // Extract time from timestamp
-                        let timeStr = "??:??";
-                        if(ev.timestamp) {
-                            const dateObj = new Date(ev.timestamp.seconds * 1000);
-                            timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        }
-                        const lat = ev.location?.latitude;
-                        const lng = ev.location?.longitude;
-                        eventHtml += `<div class="cal-event bg-green-500">
-                                        <div>${timeStr}</div>
-                                        <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="underline text-[9px] text-white font-bold">Map</a>
-                                      </div>`;
-                    } else {
-                        eventHtml += `<div class="cal-event bg-orange-500">Leave</div>`;
-                    }
-                });
-
-                container.innerHTML += `
-                    <div class="calendar-day">
-                        <div class="calendar-date-num">${d}</div>
-                        <div class="w-full">${eventHtml}</div>
-                    </div>`;
-            }
-        }
-
-        async function updateLeaveStatus(id, status) {
-            if(!confirm(`Mark this request as ${status}?`)) return;
-            await db.collection('leave_requests').doc(id).update({status: status});
-            loadAdminAttendance();
-        }
 
         function addAssignRow() { 
             const container = document.getElementById('assignRowsContainer'); 
@@ -1025,74 +847,6 @@
             }).catch(error => {
                 console.error("Error saving report:", error);
             });
-        }
-
-        // ★★★ ATTENDANCE FEATURES (Client Side) ★★★
-        async function openAttendanceModal() {
-            document.getElementById('attendanceModal').classList.remove('hidden');
-            const now = new Date();
-            const startStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-            const endStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-31`;
-
-            // Get Work Days
-            const logSnap = await db.collection('attendance_logs')
-                .where('repCode', '==', currentUser.code)
-                .where('dateString', '>=', startStr).where('dateString', '<=', endStr).get();
-            const workDays = new Set();
-            logSnap.forEach(d => workDays.add(d.data().dateString));
-            document.getElementById('statWorkDays').innerText = workDays.size;
-
-            // Get Leave Days
-            const leaveSnap = await db.collection('leave_requests')
-                .where('repCode', '==', currentUser.code)
-                .where('status', '==', 'approved')
-                .where('startDate', '>=', startStr).get();
-            let leaveSum = 0;
-            leaveSnap.forEach(d => leaveSum += parseInt(d.data().duration));
-            document.getElementById('statLeaveDays').innerText = leaveSum;
-        }
-        function closeAttendanceModal() { document.getElementById('attendanceModal').classList.add('hidden'); }
-        
-        function clockIn() {
-            if(!navigator.geolocation) return alert("Geolocation not supported");
-            const btn = document.getElementById('btnClockIn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const now = new Date();
-                const dateString = now.toISOString().slice(0,10);
-                await db.collection('attendance_logs').add({
-                    repCode: currentUser.code,
-                    repName: currentUser.name,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    dateString: dateString,
-                    location: { latitude: pos.coords.latitude, longitude: pos.coords.longitude }
-                });
-                alert("Clocked In Successfully!");
-                btn.innerHTML = '<i class="fa-solid fa-location-dot mr-2"></i> CLOCK IN NOW';
-                openAttendanceModal(); // refresh stats
-            }, (err) => {
-                alert("Location access needed.");
-                btn.innerHTML = '<i class="fa-solid fa-location-dot mr-2"></i> CLOCK IN NOW';
-            });
-        }
-
-        async function submitLeaveRequest() {
-            const date = document.getElementById('leaveDate').value;
-            const dur = document.getElementById('leaveDuration').value;
-            const reason = document.getElementById('leaveReason').value;
-            if(!date || !dur || !reason) return alert("Fill all fields");
-            
-            await db.collection('leave_requests').add({
-                repCode: currentUser.code,
-                repName: currentUser.name,
-                startDate: date,
-                duration: dur,
-                reason: reason,
-                status: 'pending',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("Request sent for approval.");
-            document.getElementById('leaveReason').value = '';
         }
 
         // ================= PRODUCT, CART & REQUEST WORKFLOW =================
@@ -1208,27 +962,68 @@
               });
         }
 
-        // ★ Fixed Search Function ★
+        // --- NEW FILTER LOGIC ---
+        function toggleStockFilter() {
+            filterInStock = !filterInStock;
+            const btn = document.getElementById('btnFilterStock');
+            const status = document.getElementById('filterStatusText');
+            
+            if (filterInStock) {
+                btn.classList.remove('filter-inactive');
+                btn.classList.add('filter-active');
+                status.classList.remove('hidden');
+            } else {
+                btn.classList.add('filter-inactive');
+                btn.classList.remove('filter-active');
+                status.classList.add('hidden');
+            }
+            // Re-run search with current input
+            handleProductSearch(document.getElementById('productSearchInput').value);
+        }
+
         function handleProductSearch(val) {
             const container = document.getElementById('productResultsContainer');
-            if (!val || val.length < 2) { 
+            
+            // Allow search if filter is active, even with empty text
+            if ((!val || val.length < 2) && !filterInStock) { 
                 currentProductResults = []; 
                 container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Type to search.</p></div>`; 
+                resetRequestButton(); // Ensure button is reset
                 return; 
             }
             
-            let searchTerms = []; let forceNew = false; let forceOld = false;
-            if (val.toLowerCase() === 'new') { forceNew = true; } else if (val.toLowerCase() === 'old') { forceOld = true; } else { searchTerms = val.toLowerCase().split(/\s+/).filter(t => t.length > 0); }
+            let searchTerms = []; 
+            if (val) searchTerms = val.toLowerCase().split(/\s+/).filter(t => t.length > 0);
 
             currentProductResults = allProductData.filter(p => {
-                if (forceNew) return p.isNew === '1' && p.stock > 0;
-                if (forceOld) return p.isNew === '2' && p.stock > 0;
-                const productString = (p.name + " " + p.code).toLowerCase();
-                return searchTerms.every(term => productString.includes(term)) && p.stock > 0;
+                let matchesText = true;
+                if (searchTerms.length > 0) {
+                     const productString = (p.name + " " + p.code).toLowerCase();
+                     matchesText = searchTerms.every(term => productString.includes(term));
+                }
+                
+                // Stock Filter Logic: If InStock is on, stock must be > 0.
+                if (filterInStock && p.stock <= 0) return false;
+                
+                // If text is entered, it must match.
+                return matchesText;
             });
 
-            document.getElementById('productCountBadge').innerText = `${currentProductResults.length} found`;
-            checkExistingRequest(val);
+            // Update Request PDF button state based on requirement:
+            // "Only filter in stock, request pdf can be clicked"
+            const reqBtn = document.getElementById('btnRequestPDF');
+            if (filterInStock) {
+                reqBtn.disabled = false;
+                reqBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+                reqBtn.classList.add('bg-primary', 'hover:bg-blue-900');
+                // Re-check existing only if enabled
+                checkExistingRequest(val);
+            } else {
+                reqBtn.disabled = true;
+                reqBtn.classList.remove('bg-primary', 'hover:bg-blue-900');
+                reqBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+                document.getElementById('btnRequestText').innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
+            }
 
             if(currentProductResults.length === 0) {
                  container.innerHTML = `<div class="text-center text-gray-400 mt-10"><p>No results.</p></div>`;
@@ -1250,8 +1045,8 @@
                 }
 
                 return `
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
-                    <div class="flex-1">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition" onclick="openProductDetail('${p.code}')">
+                    <div class="flex-1 pointer-events-none">
                         <div class="font-bold text-gray-800 text-lg flex items-center">
                             ${p.name} 
                             ${p.isNew === '1' ? '<span class="badge-new">NEW</span>' : ''}
@@ -1259,8 +1054,8 @@
                         <div class="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded mt-1">CODE: ${p.code}</div>
                     </div>
                     <div class="flex flex-col items-end pl-2">
-                        <div class="mb-2 text-right">${priceHtml}</div>
-                        <div class="flex items-center space-x-3 bg-gray-50 rounded p-1">
+                        <div class="mb-2 text-right pointer-events-none">${priceHtml}</div>
+                        <div class="flex items-center space-x-3 bg-gray-50 rounded p-1" onclick="event.stopPropagation()">
                             <button onclick="updateCart('${p.code}', -1)" class="w-8 h-8 bg-gray-200 rounded-full text-gray-600 font-bold hover:bg-gray-300">-</button>
                             <span class="text-base font-bold w-6 text-center" id="qty-${p.code}">${qty}</span>
                             <button onclick="updateCart('${p.code}', 1)" class="w-8 h-8 bg-primary text-white rounded-full font-bold hover:bg-blue-800">+</button>
@@ -1270,8 +1065,42 @@
             }).join('');
         }
 
-        // ★★★ CART LOGIC ★★★
-        function updateCart(code, change) {
+        // --- PRODUCT DETAIL & RH/LH LOGIC ---
+        let currentDetailProduct = null;
+
+        function openProductDetail(code) {
+            const p = allProductData.find(x => x.code === code);
+            if (!p) return;
+            currentDetailProduct = p;
+
+            document.getElementById('detailName').innerText = p.name;
+            document.getElementById('detailCode').innerText = "CODE: " + p.code;
+            document.getElementById('detailPrice').innerText = (p.promo && p.promo !== "0") ? p.promo : p.price;
+            document.getElementById('detailStock').innerText = p.stock > 0 ? p.stock : "0";
+            document.getElementById('detailStock').className = p.stock > 0 ? "text-xl font-bold text-gray-800" : "text-xl font-bold text-red-500";
+            
+            // Image Logic
+            const img = document.getElementById('detailImage');
+            img.src = `image/${p.code}.jpg`; // Try loading JPG
+            
+            if (p.isNew === '1') document.getElementById('detailBadgeNew').classList.remove('hidden');
+            else document.getElementById('detailBadgeNew').classList.add('hidden');
+
+            const inCart = cartItems.find(i => i.code === p.code);
+            document.getElementById('detailQty').innerText = inCart ? inCart.qty : 0;
+
+            // Setup buttons
+            document.getElementById('detailBtnAdd').onclick = () => { updateCart(p.code, 1); document.getElementById('detailQty').innerText = getQtyInCart(p.code); };
+            document.getElementById('detailBtnSub').onclick = () => { updateCart(p.code, -1); document.getElementById('detailQty').innerText = getQtyInCart(p.code); };
+
+            document.getElementById('productDetailModal').classList.remove('hidden');
+        }
+
+        function closeProductDetail() { document.getElementById('productDetailModal').classList.add('hidden'); }
+        function getQtyInCart(code) { const i = cartItems.find(x => x.code === code); return i ? i.qty : 0; }
+
+        // ★★★ CART LOGIC WITH RH/LH AUTO ADD ★★★
+        function updateCart(code, change, isAutoPair = false) {
             const product = allProductData.find(p => p.code === code);
             if(!product) return;
             
@@ -1296,7 +1125,36 @@
             const qtySpan = document.getElementById(`qty-${code}`);
             if(qtySpan) qtySpan.innerText = item ? item.qty : 0;
             renderCartFab();
-            renderCartList(); // if modal open
+            if(!document.getElementById('cartModal').classList.contains('hidden')) renderCartList();
+
+            // RH/LH Logic (Only trigger if added manually, not recursively)
+            if (!isAutoPair && change > 0) {
+                checkAndAddPair(product, change);
+            }
+        }
+
+        function checkAndAddPair(product, change) {
+            let pairName = null;
+            const name = product.name;
+            
+            // Basic RH/LH Swap Logic
+            if (name.includes(" RH ")) {
+                pairName = name.replace(" RH ", " LH ");
+            } else if (name.includes(" LH ")) {
+                pairName = name.replace(" LH ", " RH ");
+            }
+
+            if (pairName) {
+                const pairProduct = allProductData.find(p => p.name === pairName);
+                if (pairProduct) {
+                    // Automatically add the pair with recursive flag true
+                    // Check if pair is already synced? The requirement says "add identical quantity"
+                    // Simplest interpretation: If I click +, add + to pair.
+                    updateCart(pairProduct.code, change, true);
+                    
+                    // Optional: Visual Feedback? Not requested, keeping it silent/automatic.
+                }
+            }
         }
 
         function renderCartFab() {
@@ -1375,6 +1233,24 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
+        function downloadCartCsv() {
+            if(cartItems.length === 0) return alert("Cart is empty");
+            
+            // Format: Row 1 Empty. Row 2+: Code, A, Qty
+            let csv = "\n"; 
+            cartItems.forEach(i => {
+                csv += `${i.code},A,${i.qty}\n`;
+            });
+
+            const link = document.createElement("a");
+            link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
+            const fileName = `Order_${cartCustomer ? cartCustomer.id : 'Guest'}_${new Date().toISOString().slice(0,10)}.csv`;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         async function checkExistingRequest(query) {
             const snap = await db.collection('pdf_requests').where('repCode', '==', currentUser.code).where('query', '==', query).orderBy('timestamp', 'desc').limit(1).get();
             if (!snap.empty) updateButtonState(snap.docs[0].data().status);
@@ -1383,8 +1259,14 @@
         function resetRequestButton() {
             const btn = document.getElementById('btnRequestPDF');
             const text = document.getElementById('btnRequestText');
-            btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
-            btn.style.background = ""; btn.onclick = requestPdfApproval; btn.disabled = false;
+            // If filter is active, enable, else disable
+            if(filterInStock) {
+                btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
+                btn.onclick = requestPdfApproval; btn.disabled = false;
+            } else {
+                btn.className = "bg-gray-300 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px] cursor-not-allowed";
+                btn.onclick = null; btn.disabled = true;
+            }
             text.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
             currentPdfBlobUrl = null;
         }
@@ -1408,6 +1290,7 @@
 
         function requestPdfApproval() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
+            if (!filterInStock) return alert("Please filter In Stock first.");
             const query = document.getElementById('productSearchInput').value;
             db.collection('pdf_requests').add({ repCode: currentUser.code, repName: currentUser.name, query: query, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
             updateButtonState('pending');
@@ -1473,4 +1356,3 @@
     </script>
 </body>
 </html>
-```
