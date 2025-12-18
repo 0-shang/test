@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.5</title>
+    <title>Sales Master Pro 11.6</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -976,12 +976,12 @@
               });
         }
 
-        // --- NEW FILTER LOGIC ---
+        // --- FILTER LOGIC ---
         function handleProductSearch(val) {
             const container = document.getElementById('productResultsContainer');
             const filterMode = document.getElementById('productFilterSelect').value;
             
-            // Allow search to proceed if there's text OR if we are filtering by something specific (like stock/new/old)
+            // Allow search if filtering by specific criteria even if text is empty
             if ((!val || val.length < 2) && filterMode === 'all') { 
                 currentProductResults = []; 
                 container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Type to search.</p></div>`; 
@@ -1008,13 +1008,18 @@
             });
 
             // Update Request PDF button state
-            // "Only filter in stock, request pdf can be clicked"
+            // Logic: If user selected 'In Stock Only', enable the button.
+            // Even if search results are empty, the intention is to check against filter.
+            // But realistically, we need at least some query or filter action.
             const reqBtn = document.getElementById('btnRequestPDF');
             if (filterMode === 'stock') {
                 reqBtn.disabled = false;
                 reqBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
                 reqBtn.classList.add('bg-primary', 'hover:bg-blue-900');
-                checkExistingRequest(val);
+                
+                // If there's an existing request matching this exact search text, reflect status
+                if(val) checkExistingRequest(val);
+                else updateButtonState('ready'); // Or just leave enabled
             } else {
                 reqBtn.disabled = true;
                 reqBtn.classList.remove('bg-primary', 'hover:bg-blue-900');
@@ -1027,9 +1032,8 @@
                  return;
             }
 
+            // Render List - Mobile Optimized, No Buttons
             container.innerHTML = currentProductResults.map(p => {
-                const inCart = cartItems.find(i => i.code === p.code);
-                const qty = inCart ? inCart.qty : 0;
                 const isOutOfStock = p.stock <= 0;
                 
                 let priceHtml = `<div class="text-xl font-bold text-primary">${p.price}</div>`;
@@ -1042,34 +1046,26 @@
                     `;
                 }
 
-                // Buttons or Out of Stock Badge
-                let actionHtml = '';
+                // Show Badge if Out of Stock
+                let statusHtml = '';
                 if (isOutOfStock) {
-                    actionHtml = `<div class="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100">OUT OF STOCK</div>`;
-                } else {
-                    actionHtml = `
-                        <div class="flex items-center space-x-3 bg-gray-50 rounded p-1" onclick="event.stopPropagation()">
-                            <button onclick="updateCart('${p.code}', -1)" class="w-8 h-8 bg-gray-200 rounded-full text-gray-600 font-bold hover:bg-gray-300">-</button>
-                            <span class="text-base font-bold w-6 text-center" id="qty-${p.code}">${qty}</span>
-                            <button onclick="updateCart('${p.code}', 1)" class="w-8 h-8 bg-primary text-white rounded-full font-bold hover:bg-blue-800">+</button>
-                        </div>
-                    `;
+                    statusHtml = `<div class="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100">OUT OF STOCK</div>`;
                 }
 
                 return `
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition" onclick="openProductDetail('${p.code}')">
-                    <div class="flex-1 pointer-events-none pr-2">
-                        <div class="font-bold text-gray-800 text-lg flex items-center flex-wrap">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition relative" onclick="openProductDetail('${p.code}')">
+                    <div class="flex-1 pr-2 min-w-0">
+                         <div class="text-xs text-gray-500 font-mono mb-1">CODE: ${p.code}</div>
+                        <div class="font-bold text-gray-800 text-sm leading-snug break-words">
                             ${p.name} 
-                            ${p.isNew === '1' ? '<span class="badge-new">NEW</span>' : ''}
-                            ${isOutOfStock ? '<span class="badge-out">OUT</span>' : ''}
+                            ${p.isNew === '1' ? '<span class="badge-new ml-1">NEW</span>' : ''}
                         </div>
-                        <div class="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded mt-1">CODE: ${p.code}</div>
                     </div>
-                    <div class="flex flex-col items-end pl-2 shrink-0">
-                        <div class="mb-2 text-right pointer-events-none">${priceHtml}</div>
-                        ${actionHtml}
+                    <div class="flex flex-col items-end shrink-0 pl-2">
+                        <div class="mb-1 text-right">${priceHtml}</div>
+                        ${statusHtml}
                     </div>
+                    <i class="fa-solid fa-chevron-right absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-200 text-xs"></i>
                 </div>`;
             }).join('');
         }
@@ -1150,7 +1146,7 @@
             if (change > 0) {
                 const currentQty = item ? item.qty : 0;
                 if (currentQty + change > product.stock) {
-                    // Only alert if manual action
+                    // Only alert if manual action to avoid popup spam on auto-add
                     if(!isAutoPair) alert(`Stock limit reached for ${product.code}`);
                     return;
                 }
@@ -1173,19 +1169,11 @@
             if(item.qty <= 0) cartItems = cartItems.filter(i => i.code !== code);
             
             // Update UI
-            const qtySpan = document.getElementById(`qty-${code}`);
-            if(qtySpan) qtySpan.innerText = item ? item.qty : 0;
-            
-            // Sync Input if Detail Modal is open
-            const detailInput = document.getElementById('detailQtyInput');
-            if (!document.getElementById('productDetailModal').classList.contains('hidden') && currentDetailProduct && currentDetailProduct.code === code) {
-                detailInput.value = item ? item.qty : 0;
-            }
-
             renderCartFab();
             if(!document.getElementById('cartModal').classList.contains('hidden')) renderCartList();
 
-            // RH/LH Logic
+            // Auto-Pairing Logic (RH/LH)
+            // Rule: If not already triggered by recursion, and we are ADDING items
             if (!isAutoPair && change > 0) {
                 checkAndAddPair(product, change);
             }
@@ -1195,15 +1183,37 @@
             let pairName = null;
             const name = product.name;
             
-            if (name.includes(" RH ")) pairName = name.replace(" RH ", " LH ");
-            else if (name.includes(" LH ")) pairName = name.replace(" LH ", " RH ");
+            // Check for strict " RH " or " LH " (spaces matter to avoid partial matches inside words)
+            // Also covers end of string cases if strictly formatted
+            if (name.includes(" RH ")) {
+                pairName = name.replace(" RH ", " LH ");
+            } else if (name.includes(" LH ")) {
+                pairName = name.replace(" LH ", " RH ");
+            }
 
             if (pairName) {
                 const pairProduct = allProductData.find(p => p.name === pairName);
                 if (pairProduct) {
+                    // Recursively add the pair, setting isAutoPair to true to prevent infinite loop
                     updateCart(pairProduct.code, change, true);
                 }
             }
+        }
+
+        // Delete Button Logic for Cart
+        function deleteFromCart(code) {
+             if(confirm('Remove this item from cart?')) {
+                 // Remove item by filtering
+                 cartItems = cartItems.filter(i => i.code !== code);
+                 // Update UI
+                 renderCartFab();
+                 renderCartList();
+                 // If detail modal is open for this item, reset input
+                 if (!document.getElementById('productDetailModal').classList.contains('hidden') && 
+                     currentDetailProduct && currentDetailProduct.code === code) {
+                     document.getElementById('detailQtyInput').value = 0;
+                 }
+             }
         }
 
         function renderCartFab() {
@@ -1227,9 +1237,9 @@
                 const sub = i.price * i.qty;
                 total += sub;
                 return `
-                <div class="flex flex-col bg-gray-50 p-3 rounded border-b space-y-2">
+                <div class="flex flex-col bg-gray-50 p-3 rounded border-b space-y-2 relative">
                     <div class="text-xs font-bold text-gray-500">${i.code}</div>
-                    <div class="text-sm font-bold text-gray-800 break-words leading-tight">${i.name}</div>
+                    <div class="text-sm font-bold text-gray-800 break-words leading-tight pr-8">${i.name}</div>
                     
                     <div class="flex justify-between items-center mt-1">
                         <div class="text-xs text-gray-500 font-mono">${i.price.toFixed(2)} x ${i.qty}</div>
@@ -1239,6 +1249,10 @@
                             <button onclick="updateCart('${i.code}', 1)" class="text-green-600 font-bold px-3 py-1 bg-white border rounded shadow-sm hover:bg-green-50">+</button>
                         </div>
                     </div>
+                    <!-- Delete Button -->
+                    <button onclick="deleteFromCart('${i.code}')" class="absolute top-3 right-3 text-red-400 hover:text-red-600">
+                        <i class="fa-solid fa-trash-can text-lg"></i>
+                    </button>
                 </div>`;
             }).join('');
             document.getElementById('cartTotalPrice').innerText = total.toFixed(2);
@@ -1274,9 +1288,11 @@
             if(!cartCustomer) return alert("Please select a customer");
             
             const total = cartItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
-            let msg = `*New Order*\n*Customer:* ${cartCustomer.name} (${cartCustomer.id})\n*Rep:* ${currentUser.name}\n------------------\n`;
+            
+            // New Format: Code : Qty = Total
+            let msg = `*New Order*\n*Customer:* ${cartCustomer.name}\n------------------\n`;
             cartItems.forEach(i => {
-                msg += `${i.name}\n   ${i.qty} x ${i.price.toFixed(2)} = ${(i.qty*i.price).toFixed(2)}\n`;
+                msg += `${i.code} : ${i.qty} = ${(i.qty*i.price).toFixed(2)}\n`;
             });
             msg += `------------------\n*TOTAL: ${total.toFixed(2)}*`;
             
