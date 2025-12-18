@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.4</title>
+    <title>Sales Master Pro 11.5</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -103,14 +103,27 @@
         .scroll-container { -webkit-overflow-scrolling: touch; }
 
         .badge-new { background-color: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
+        .badge-out { background-color: #9ca3af; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
 
         /* Cart FAB */
         .cart-fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: #f59e0b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 70; transition: transform 0.2s; }
         .cart-fab:active { transform: scale(0.9); }
         
-        /* Filter Button Active State */
-        .filter-active { background-color: #f59e0b; color: white; border-color: #f59e0b; }
-        .filter-inactive { background-color: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
+        /* Custom Select */
+        .custom-select {
+            appearance: none; 
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1em;
+        }
+
+        /* Number Input No Arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
     </style>
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
@@ -153,7 +166,6 @@
                 <button onclick="switchAdminTab('assign')" id="btnTabAssign" class="flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent">Assign</button>
                 <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Tasks</button>
                 <button onclick="switchAdminTab('reports')" id="btnTabReports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Reports</button>
-                <!-- Attendance Tab Removed -->
                 <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Req Logs</button>
             </div>
         </header>
@@ -227,8 +239,6 @@
                 </div>
             </div>
 
-            <!-- Admin Attendance Tab Removed -->
-
             <div id="adminTabExports" class="max-w-6xl mx-auto hidden space-y-4">
                 <div class="bg-white p-4 rounded shadow mb-4">
                     <h3 class="font-bold text-gray-700 mb-2">PDF Approval Queue</h3>
@@ -251,7 +261,6 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <!-- Check In Button Removed -->
                     <button onclick="toggleAssignedModal()" class="relative bg-gray-100 hover:bg-blue-50 text-primary p-2 rounded-lg transition mr-2">
                         <i class="fa-solid fa-bell text-xl"></i>
                         <span id="assignedCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
@@ -328,22 +337,27 @@
                 <div class="flex flex-col md:flex-row gap-3">
                     <div class="flex items-center space-x-2 flex-1">
                          <div class="relative flex-1">
-                            <input type="text" id="productSearchInput" placeholder="Ex: POWER RACK NEW" 
+                            <input type="text" id="productSearchInput" placeholder="Search..." 
                                    class="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent outline-none text-lg"
                                    oninput="handleProductSearch(this.value)">
                             <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
-                        <!-- Filter Button -->
-                        <button id="btnFilterStock" onclick="toggleStockFilter()" class="w-12 h-12 rounded-lg border flex items-center justify-center transition filter-inactive hover:bg-gray-200" title="Filter In Stock">
-                            <i class="fa-solid fa-filter text-lg"></i>
-                        </button>
+                        <!-- NEW FILTER DROPDOWN -->
+                        <div class="relative">
+                            <select id="productFilterSelect" onchange="handleProductSearch(document.getElementById('productSearchInput').value)" 
+                                    class="custom-select appearance-none bg-gray-100 border border-gray-300 text-gray-700 py-3 pl-3 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-accent font-bold h-full">
+                                <option value="all">Show All</option>
+                                <option value="stock">In Stock Only</option>
+                                <option value="new">New Items</option>
+                                <option value="old">Old Items</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <button id="btnRequestPDF" onclick="requestPdfApproval()" class="relative overflow-hidden bg-gray-300 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]" disabled>
                         <span id="btnRequestText"><i class="fa-solid fa-paper-plane mr-2"></i> Request PDF</span>
                     </button>
                 </div>
-                <div id="filterStatusText" class="text-xs font-bold text-accent mt-1 hidden text-right w-full">Filtering: In Stock & New</div>
             </div>
 
             <div id="productResultsContainer" class="flex-1 overflow-y-auto min-h-0 space-y-3 pb-24 scroll-container">
@@ -399,13 +413,14 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-center space-x-6 mt-4">
-                    <button id="detailBtnSub" class="w-16 h-16 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold text-gray-600 transition"><i class="fa-solid fa-minus"></i></button>
-                    <div class="text-center">
+                <div class="flex items-center justify-center space-x-4 mt-4">
+                    <button id="detailBtnSub" class="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-2xl font-bold text-gray-600 transition"><i class="fa-solid fa-minus"></i></button>
+                    <div class="text-center flex-1">
                         <div class="text-xs text-gray-400 font-bold mb-1">IN CART</div>
-                        <div id="detailQty" class="text-4xl font-bold text-primary w-16">0</div>
+                        <!-- Updated Input -->
+                        <input type="number" id="detailQtyInput" class="text-4xl font-bold text-primary w-full text-center border-b border-gray-200 focus:outline-none focus:border-primary bg-transparent" value="0">
                     </div>
-                    <button id="detailBtnAdd" class="w-16 h-16 rounded-full bg-primary hover:bg-blue-800 flex items-center justify-center text-3xl font-bold text-white shadow-lg transition"><i class="fa-solid fa-plus"></i></button>
+                    <button id="detailBtnAdd" class="w-12 h-12 rounded-full bg-primary hover:bg-blue-800 flex items-center justify-center text-2xl font-bold text-white shadow-lg transition"><i class="fa-solid fa-plus"></i></button>
                 </div>
             </div>
         </div>
@@ -499,7 +514,6 @@
         let adminExportLogs = []; 
         let cartItems = []; 
         let cartCustomer = null; 
-        let filterInStock = false; // New global for stock filter
 
         const repDirectory = {
             "10543": "Beny",
@@ -963,32 +977,15 @@
         }
 
         // --- NEW FILTER LOGIC ---
-        function toggleStockFilter() {
-            filterInStock = !filterInStock;
-            const btn = document.getElementById('btnFilterStock');
-            const status = document.getElementById('filterStatusText');
-            
-            if (filterInStock) {
-                btn.classList.remove('filter-inactive');
-                btn.classList.add('filter-active');
-                status.classList.remove('hidden');
-            } else {
-                btn.classList.add('filter-inactive');
-                btn.classList.remove('filter-active');
-                status.classList.add('hidden');
-            }
-            // Re-run search with current input
-            handleProductSearch(document.getElementById('productSearchInput').value);
-        }
-
         function handleProductSearch(val) {
             const container = document.getElementById('productResultsContainer');
+            const filterMode = document.getElementById('productFilterSelect').value;
             
-            // Allow search if filter is active, even with empty text
-            if ((!val || val.length < 2) && !filterInStock) { 
+            // Allow search to proceed if there's text OR if we are filtering by something specific (like stock/new/old)
+            if ((!val || val.length < 2) && filterMode === 'all') { 
                 currentProductResults = []; 
                 container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Type to search.</p></div>`; 
-                resetRequestButton(); // Ensure button is reset
+                resetRequestButton(); 
                 return; 
             }
             
@@ -1002,21 +999,21 @@
                      matchesText = searchTerms.every(term => productString.includes(term));
                 }
                 
-                // Stock Filter Logic: If InStock is on, stock must be > 0.
-                if (filterInStock && p.stock <= 0) return false;
+                // Filter Logic
+                if (filterMode === 'stock' && p.stock <= 0) return false;
+                if (filterMode === 'new' && p.isNew !== '1') return false;
+                if (filterMode === 'old' && p.isNew !== '2') return false;
                 
-                // If text is entered, it must match.
                 return matchesText;
             });
 
-            // Update Request PDF button state based on requirement:
+            // Update Request PDF button state
             // "Only filter in stock, request pdf can be clicked"
             const reqBtn = document.getElementById('btnRequestPDF');
-            if (filterInStock) {
+            if (filterMode === 'stock') {
                 reqBtn.disabled = false;
                 reqBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
                 reqBtn.classList.add('bg-primary', 'hover:bg-blue-900');
-                // Re-check existing only if enabled
                 checkExistingRequest(val);
             } else {
                 reqBtn.disabled = true;
@@ -1033,6 +1030,7 @@
             container.innerHTML = currentProductResults.map(p => {
                 const inCart = cartItems.find(i => i.code === p.code);
                 const qty = inCart ? inCart.qty : 0;
+                const isOutOfStock = p.stock <= 0;
                 
                 let priceHtml = `<div class="text-xl font-bold text-primary">${p.price}</div>`;
                 if (p.promo && p.promo !== "0" && p.promo !== "") {
@@ -1044,22 +1042,33 @@
                     `;
                 }
 
-                return `
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition" onclick="openProductDetail('${p.code}')">
-                    <div class="flex-1 pointer-events-none">
-                        <div class="font-bold text-gray-800 text-lg flex items-center">
-                            ${p.name} 
-                            ${p.isNew === '1' ? '<span class="badge-new">NEW</span>' : ''}
-                        </div>
-                        <div class="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded mt-1">CODE: ${p.code}</div>
-                    </div>
-                    <div class="flex flex-col items-end pl-2">
-                        <div class="mb-2 text-right pointer-events-none">${priceHtml}</div>
+                // Buttons or Out of Stock Badge
+                let actionHtml = '';
+                if (isOutOfStock) {
+                    actionHtml = `<div class="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100">OUT OF STOCK</div>`;
+                } else {
+                    actionHtml = `
                         <div class="flex items-center space-x-3 bg-gray-50 rounded p-1" onclick="event.stopPropagation()">
                             <button onclick="updateCart('${p.code}', -1)" class="w-8 h-8 bg-gray-200 rounded-full text-gray-600 font-bold hover:bg-gray-300">-</button>
                             <span class="text-base font-bold w-6 text-center" id="qty-${p.code}">${qty}</span>
                             <button onclick="updateCart('${p.code}', 1)" class="w-8 h-8 bg-primary text-white rounded-full font-bold hover:bg-blue-800">+</button>
                         </div>
+                    `;
+                }
+
+                return `
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition" onclick="openProductDetail('${p.code}')">
+                    <div class="flex-1 pointer-events-none pr-2">
+                        <div class="font-bold text-gray-800 text-lg flex items-center flex-wrap">
+                            ${p.name} 
+                            ${p.isNew === '1' ? '<span class="badge-new">NEW</span>' : ''}
+                            ${isOutOfStock ? '<span class="badge-out">OUT</span>' : ''}
+                        </div>
+                        <div class="text-xs text-gray-500 bg-gray-100 inline-block px-2 py-1 rounded mt-1">CODE: ${p.code}</div>
+                    </div>
+                    <div class="flex flex-col items-end pl-2 shrink-0">
+                        <div class="mb-2 text-right pointer-events-none">${priceHtml}</div>
+                        ${actionHtml}
                     </div>
                 </div>`;
             }).join('');
@@ -1081,17 +1090,48 @@
             
             // Image Logic
             const img = document.getElementById('detailImage');
-            img.src = `image/${p.code}.jpg`; // Try loading JPG
+            img.src = `image/${p.code}.jpg`; 
             
             if (p.isNew === '1') document.getElementById('detailBadgeNew').classList.remove('hidden');
             else document.getElementById('detailBadgeNew').classList.add('hidden');
 
             const inCart = cartItems.find(i => i.code === p.code);
-            document.getElementById('detailQty').innerText = inCart ? inCart.qty : 0;
+            const currentQty = inCart ? inCart.qty : 0;
 
-            // Setup buttons
-            document.getElementById('detailBtnAdd').onclick = () => { updateCart(p.code, 1); document.getElementById('detailQty').innerText = getQtyInCart(p.code); };
-            document.getElementById('detailBtnSub').onclick = () => { updateCart(p.code, -1); document.getElementById('detailQty').innerText = getQtyInCart(p.code); };
+            // Setup Input
+            const qtyInput = document.getElementById('detailQtyInput');
+            qtyInput.value = currentQty;
+            
+            // Check stock for input logic
+            qtyInput.onchange = function() {
+                let val = parseInt(this.value) || 0;
+                if (val > p.stock) {
+                    val = p.stock;
+                    alert("Cannot exceed available stock!");
+                }
+                if (val < 0) val = 0;
+                this.value = val;
+                
+                // Calculate difference to update cart
+                const currentInCart = getQtyInCart(p.code);
+                const diff = val - currentInCart;
+                if (diff !== 0) updateCart(p.code, diff);
+            };
+
+            // Setup buttons with stock check
+            document.getElementById('detailBtnAdd').onclick = () => { 
+                const current = getQtyInCart(p.code);
+                if (current < p.stock) {
+                    updateCart(p.code, 1); 
+                    document.getElementById('detailQtyInput').value = getQtyInCart(p.code);
+                } else {
+                    alert("Max stock reached");
+                }
+            };
+            document.getElementById('detailBtnSub').onclick = () => { 
+                updateCart(p.code, -1); 
+                document.getElementById('detailQtyInput').value = getQtyInCart(p.code); 
+            };
 
             document.getElementById('productDetailModal').classList.remove('hidden');
         }
@@ -1105,6 +1145,17 @@
             if(!product) return;
             
             let item = cartItems.find(i => i.code === code);
+            
+            // Validation: Cannot add more than stock (if adding)
+            if (change > 0) {
+                const currentQty = item ? item.qty : 0;
+                if (currentQty + change > product.stock) {
+                    // Only alert if manual action
+                    if(!isAutoPair) alert(`Stock limit reached for ${product.code}`);
+                    return;
+                }
+            }
+
             if(!item) {
                 if(change > 0) {
                     const finalPrice = (product.promo && product.promo!=="0") ? product.promo : product.price;
@@ -1124,10 +1175,17 @@
             // Update UI
             const qtySpan = document.getElementById(`qty-${code}`);
             if(qtySpan) qtySpan.innerText = item ? item.qty : 0;
+            
+            // Sync Input if Detail Modal is open
+            const detailInput = document.getElementById('detailQtyInput');
+            if (!document.getElementById('productDetailModal').classList.contains('hidden') && currentDetailProduct && currentDetailProduct.code === code) {
+                detailInput.value = item ? item.qty : 0;
+            }
+
             renderCartFab();
             if(!document.getElementById('cartModal').classList.contains('hidden')) renderCartList();
 
-            // RH/LH Logic (Only trigger if added manually, not recursively)
+            // RH/LH Logic
             if (!isAutoPair && change > 0) {
                 checkAndAddPair(product, change);
             }
@@ -1137,22 +1195,13 @@
             let pairName = null;
             const name = product.name;
             
-            // Basic RH/LH Swap Logic
-            if (name.includes(" RH ")) {
-                pairName = name.replace(" RH ", " LH ");
-            } else if (name.includes(" LH ")) {
-                pairName = name.replace(" LH ", " RH ");
-            }
+            if (name.includes(" RH ")) pairName = name.replace(" RH ", " LH ");
+            else if (name.includes(" LH ")) pairName = name.replace(" LH ", " RH ");
 
             if (pairName) {
                 const pairProduct = allProductData.find(p => p.name === pairName);
                 if (pairProduct) {
-                    // Automatically add the pair with recursive flag true
-                    // Check if pair is already synced? The requirement says "add identical quantity"
-                    // Simplest interpretation: If I click +, add + to pair.
                     updateCart(pairProduct.code, change, true);
-                    
-                    // Optional: Visual Feedback? Not requested, keeping it silent/automatic.
                 }
             }
         }
@@ -1178,17 +1227,18 @@
                 const sub = i.price * i.qty;
                 total += sub;
                 return `
-                <div class="flex justify-between items-center bg-gray-50 p-2 rounded border-b">
-                    <div class="flex-1">
-                        <div class="text-sm font-bold truncate">${i.name}</div>
-                        <div class="text-xs text-gray-500">${i.price.toFixed(2)} x ${i.qty}</div>
+                <div class="flex flex-col bg-gray-50 p-3 rounded border-b space-y-2">
+                    <div class="text-xs font-bold text-gray-500">${i.code}</div>
+                    <div class="text-sm font-bold text-gray-800 break-words leading-tight">${i.name}</div>
+                    
+                    <div class="flex justify-between items-center mt-1">
+                        <div class="text-xs text-gray-500 font-mono">${i.price.toFixed(2)} x ${i.qty}</div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateCart('${i.code}', -1)" class="text-red-500 font-bold px-3 py-1 bg-white border rounded shadow-sm hover:bg-red-50">-</button>
+                            <span class="text-sm font-bold w-6 text-center">${i.qty}</span>
+                            <button onclick="updateCart('${i.code}', 1)" class="text-green-600 font-bold px-3 py-1 bg-white border rounded shadow-sm hover:bg-green-50">+</button>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="updateCart('${i.code}', -1)" class="text-red-500 font-bold px-2 border rounded">-</button>
-                        <span class="text-sm w-4 text-center">${i.qty}</span>
-                        <button onclick="updateCart('${i.code}', 1)" class="text-green-600 font-bold px-2 border rounded">+</button>
-                    </div>
-                    <div class="text-sm font-bold w-16 text-right">${sub.toFixed(2)}</div>
                 </div>`;
             }).join('');
             document.getElementById('cartTotalPrice').innerText = total.toFixed(2);
@@ -1259,8 +1309,10 @@
         function resetRequestButton() {
             const btn = document.getElementById('btnRequestPDF');
             const text = document.getElementById('btnRequestText');
-            // If filter is active, enable, else disable
-            if(filterInStock) {
+            // Logic based on select value
+            const filterMode = document.getElementById('productFilterSelect').value;
+            
+            if(filterMode === 'stock') {
                 btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
                 btn.onclick = requestPdfApproval; btn.disabled = false;
             } else {
@@ -1290,7 +1342,9 @@
 
         function requestPdfApproval() {
             if (currentProductResults.length === 0) return alert("Search for products first!");
-            if (!filterInStock) return alert("Please filter In Stock first.");
+            const filterMode = document.getElementById('productFilterSelect').value;
+            if (filterMode !== 'stock') return alert("Please select 'In Stock Only' to request PDF.");
+            
             const query = document.getElementById('productSearchInput').value;
             db.collection('pdf_requests').add({ repCode: currentUser.code, repName: currentUser.name, query: query, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
             updateButtonState('pending');
