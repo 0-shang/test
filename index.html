@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.8</title>
+    <title>Sales Master Pro 11.9</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -105,11 +105,9 @@
         .badge-new { background-color: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
         .badge-out { background-color: #9ca3af; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
 
-        /* Cart FAB */
         .cart-fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: #f59e0b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 70; transition: transform 0.2s; }
         .cart-fab:active { transform: scale(0.9); }
         
-        /* Custom Select */
         .custom-select {
             appearance: none; 
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -118,12 +116,13 @@
             background-size: 1em;
         }
 
-        /* Number Input No Arrows */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
             margin: 0; 
         }
+        
+        .task-fade-out { opacity: 0; transition: opacity 0.5s ease-out; }
     </style>
 </head>
 <body class="font-sans h-screen flex flex-col text-gray-800">
@@ -163,8 +162,8 @@
                 </div>
             </div>
             <div class="flex bg-blue-800 text-sm overflow-x-auto">
-                <button onclick="switchAdminTab('assign')" id="btnTabAssign" class="flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent">Assign</button>
-                <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Tasks</button>
+                <!-- Modified: Removed Assign Tab, Tasks is default -->
+                <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent">Tasks</button>
                 <button onclick="switchAdminTab('reports')" id="btnTabReports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Reports</button>
                 <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Req Logs</button>
             </div>
@@ -172,23 +171,24 @@
 
         <main id="adminMain" class="flex-1 overflow-y-auto p-4 relative">
             <div id="adminPullIndicator" class="pull-indicator"><i class="fa-solid fa-arrow-down mr-2"></i> Pull to refresh</div>
-            
-            <div id="adminTabAssign" class="max-w-4xl mx-auto space-y-4">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h3 class="font-bold text-gray-700">Bulk Task Assignment</h3>
-                        <button onclick="addAssignRow()" class="bg-gray-100 hover:bg-gray-200 text-primary px-3 py-1 rounded text-sm font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Row</button>
-                    </div>
-                    <div id="assignRowsContainer" class="space-y-4"></div>
-                    <div class="mt-6 pt-4 border-t">
-                        <button onclick="adminSubmitBulkTasks()" class="bg-primary text-white px-8 py-3 rounded shadow hover:bg-blue-800 font-bold w-full md:w-auto flex justify-center items-center"><i class="fa-solid fa-paper-plane mr-2"></i> Assign All Tasks</button>
-                    </div>
-                </div>
-            </div>
 
-            <div id="adminTabHistory" class="max-w-5xl mx-auto hidden space-y-4">
+            <!-- Modified: Tasks Tab with Import -->
+            <div id="adminTabHistory" class="max-w-5xl mx-auto space-y-4">
+                <div class="bg-white p-4 rounded-lg shadow mb-4">
+                     <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-gray-700"><i class="fa-solid fa-list-check mr-2"></i>Task Management</h3>
+                        <!-- Import Button -->
+                        <div>
+                            <input type="file" id="taskCsvInput" accept=".csv" class="hidden" onchange="adminImportTaskCSV(this)">
+                            <button onclick="document.getElementById('taskCsvInput').click()" class="bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                                <i class="fa-solid fa-file-import mr-2"></i> Import Tasks (CSV)
+                            </button>
+                        </div>
+                     </div>
+                </div>
+
                 <div class="flex flex-col md:flex-row justify-between items-center gap-2">
-                    <input type="text" id="adminTaskFilter" placeholder="Search tasks to view..." class="p-2 border rounded w-full md:w-1/3" onkeyup="renderAdminTasks()">
+                    <input type="text" id="adminTaskFilter" placeholder="Search tasks..." class="p-2 border rounded w-full md:w-1/3" onkeyup="renderAdminTasks()">
                     <button onclick="adminExportTasks()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold shadow"><i class="fa-solid fa-file-csv mr-2"></i> Export CSV</button>
                 </div>
                 <div id="adminTaskList" class="space-y-3">
@@ -342,7 +342,6 @@
                                    oninput="handleProductSearch(this.value)">
                             <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
-                        <!-- NEW FILTER DROPDOWN -->
                         <div class="relative">
                             <select id="productFilterSelect" onchange="handleProductSearch(document.getElementById('productSearchInput').value)" 
                                     class="custom-select appearance-none bg-gray-100 border border-gray-300 text-gray-700 py-3 pl-3 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-accent font-bold h-full">
@@ -375,7 +374,6 @@
             </button>
         </div>
 
-        <!-- Request History Sidebar -->
         <div id="requestSidebar" class="req-sidebar req-sidebar-closed fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[70] flex flex-col">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
                 <h3 class="font-bold">Request History</h3>
@@ -417,7 +415,6 @@
                     <button id="detailBtnSub" class="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-2xl font-bold text-gray-600 transition"><i class="fa-solid fa-minus"></i></button>
                     <div class="text-center flex-1">
                         <div class="text-xs text-gray-400 font-bold mb-1">IN CART</div>
-                        <!-- Updated Input -->
                         <input type="number" id="detailQtyInput" class="text-4xl font-bold text-primary w-full text-center border-b border-gray-200 focus:outline-none focus:border-primary bg-transparent" value="0">
                     </div>
                     <button id="detailBtnAdd" class="w-12 h-12 rounded-full bg-primary hover:bg-blue-800 flex items-center justify-center text-2xl font-bold text-white shadow-lg transition"><i class="fa-solid fa-plus"></i></button>
@@ -433,7 +430,6 @@
                 <h3 class="font-bold text-lg"><i class="fa-solid fa-cart-shopping mr-2"></i>Order Builder</h3>
                 <button onclick="closeCartModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
-            <!-- Cart Customer Selection -->
             <div class="p-4 bg-gray-50 border-b">
                 <div id="cartCustomerSection">
                     <label class="text-xs font-bold text-gray-500 mb-1 block">CUSTOMER (Max 1)</label>
@@ -448,11 +444,9 @@
                     </div>
                 </div>
             </div>
-            <!-- Cart Items -->
             <div class="flex-1 overflow-y-auto p-4 space-y-2" id="cartItemsList">
                 <div class="text-center text-gray-400 mt-10">Cart is empty.</div>
             </div>
-            <!-- Cart Footer -->
             <div class="p-4 border-t bg-white space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="font-bold text-lg">Total</span>
@@ -470,9 +464,9 @@
         </div>
     </div>
 
-    <!-- Assigned Task Modal -->
+    <!-- Assigned Task Modal (Updated Logic) -->
     <div id="assignedTaskModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white w-full max-w-2xl h-3/4 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+        <div class="bg-white w-full max-w-2xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
                 <h3 class="font-bold text-lg"><i class="fa-solid fa-bell mr-2"></i>Assigned Tasks</h3>
                 <button onclick="toggleAssignedModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button>
@@ -515,34 +509,34 @@
         let cartItems = []; 
         let cartCustomer = null; 
 
-        // Update 1: Add New Users
         const repDirectory = {
             "10543": "Beny",
             "10882": "Prince",
             "10989": "Abigail",
             "11006": "Hilda",
             "11029": "Linda",
-            // New Users
-            "11033": "商宇琛",
-            "10974": "徐亮",
-            "11077": "李勇辉",
-            "10848": "朱立刚"
+            "11085": "AKORFA",
+            "10544": "BENEDICTA",
+            "11202": "PRINCE B",
+            "11030": "KUMBALA",
+            "10907": "ESTHER YEBOAH",
+            "10596": "KOFI",
+            "10595": "OBENG",
+            "11033": "Shang",
+            "10974": "Marvin",
+            "11077": "Michael",
+            "10848": "Leone"
         };
 
         const vipUsers = ["11033", "10974", "11077", "10848"];
 
-        // --- Fast Session Check ---
         try {
             const savedUser = localStorage.getItem('salesMasterUser');
-            if (savedUser) {
-                // Pre-check logic if needed
-            }
+            if (savedUser) {}
         } catch(e) {}
 
         window.onload = function() {
             checkSession(); 
-
-            // Load CSVs in background
             loadCustomersCSV(); 
             loadProductCSV(); 
             initDraggableListBtn(); 
@@ -562,7 +556,6 @@
             if(saved) { 
                 const user = JSON.parse(saved); 
                 document.getElementById('loginRepCode').value = user.code === 'admin' ? 'admin' : user.code; 
-                // Set placeholder pass just to fill input
                 document.getElementById('loginPassword').value = '****'; 
                 
                 document.body.classList.add('loaded'); 
@@ -599,26 +592,24 @@
             } catch (e) { console.error(e); } 
         }
 
-        // CSV Loading Logic - Expanded for readability and stability
         function loadCustomersCSV() { 
             Papa.parse("customers.csv", { 
-                download: true, 
-                header: true, 
-                skipEmptyLines: true, 
+                download: true, header: true, skipEmptyLines: true,
+                error: function(err, file, inputElem, reason) { alert("CSV Error: " + err.message); },
                 complete: function(results) { 
-                    allSalesData = results.data.map(item => {
-                        return { 
-                            id: (item.Code||item.code||"").trim(), 
-                            name: (item.Name||item.name||"Unknown").trim(), 
-                            csvRepName: (item.RepName||item.repname||"Sales").trim(), 
-                            repCode: (item.Limit||item.limit||"").trim().toUpperCase(), 
-                            phone: (item.Phone||item.phone||"").trim(), 
-                            credit: (item.Credit||item.credit||"0").trim() 
-                        };
-                    }); 
+                    allSalesData = results.data.map(item => ({ 
+                        id: (item.Code||item.code||"").trim(), 
+                        name: (item.Name||item.name||"Unknown").trim(), 
+                        csvRepName: (item.RepName||item.repname||"Sales").trim(), 
+                        repCode: (item.Limit||item.limit||"").trim().toUpperCase(), 
+                        phone: (item.Phone||item.phone||"").trim(), 
+                        credit: (item.Credit||item.credit||"0").trim() 
+                    })); 
+
                     if(currentUser && !currentUser.isAdmin) {
-                        if (repDirectory[currentUser.code]) {
-                            myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
+                        // REQ 2: OBENG (10595) SEES ALL
+                        if(currentUser.code === '10595') {
+                            myCustomers = allSalesData;
                         } else {
                             myCustomers = allSalesData.filter(c => c.repCode == currentUser.code);
                         }
@@ -629,9 +620,7 @@
         
         function loadProductCSV() { 
             Papa.parse("products.csv", { 
-                download: true, 
-                header: true, 
-                skipEmptyLines: true, 
+                download: true, header: true, skipEmptyLines: true, 
                 complete: function(results) { 
                     allProductData = results.data.map(item => ({ 
                         code: (item.Code||item.code||"").trim(), 
@@ -662,75 +651,45 @@
                 document.getElementById('loginSection').classList.add('hidden'); 
                 document.getElementById('adminSection').classList.remove('hidden'); 
                 document.body.classList.add('loaded');
-                addAssignRow(); initAdminReportFilters(); 
+                // REQ 1: Notification Permission
+                if ("Notification" in window) Notification.requestPermission();
+                
+                initAdminReportFilters(); 
                 if(!silent) resetLoginBtn();
                 return; 
             } 
             
-            // Check if VIP (Password 6666)
+            // Logic for Reps
+            let finalName = repDirectory[code] || "Sales Rep";
+            // Check matching customers
+            let customers = [];
+            // REQ 2: OBENG
+            if(code === '10595') {
+                if(allSalesData.length > 0) customers = allSalesData; 
+                finalName = "OBENG";
+            } else {
+                if(allSalesData.length > 0) customers = allSalesData.filter(c => c.repCode == code); 
+            }
+            
             if (vipUsers.includes(code)) {
-                if (pass !== '6666' && pass !== '****') { // **** check is for silent re-login bypass
-                     if(!silent) { status.innerText = "Wrong Password"; status.classList.remove('hidden'); resetLoginBtn(); }
-                     return;
-                }
-                // Determine Name
-                let finalName = repDirectory[code] || "VIP User";
-                if(allSalesData.length > 0) myCustomers = allSalesData.filter(c => c.repCode == code); 
+                if (pass !== '6666' && pass !== '****') { if(!silent) { status.innerText = "Wrong Password"; status.classList.remove('hidden'); resetLoginBtn(); } return; }
                 currentUser = { code: code, name: finalName, isAdmin: false, isVip: true }; 
-                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
-                await refreshData(); 
-                document.getElementById('loginSection').classList.add('hidden'); 
-                document.getElementById('appSection').classList.remove('hidden'); 
-                document.body.classList.add('loaded'); 
-                document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; 
-                listenForPdfStatus(); 
-                listenForHistory(); 
-                if(!silent) resetLoginBtn();
-                return;
+            } else {
+                if (pass !== '0000' && pass !== '****') { if(!silent) { status.innerText = "Wrong Password"; status.classList.remove('hidden'); resetLoginBtn(); } return; }
+                if (!repDirectory[code] && customers.length === 0) { if(!silent) { status.innerText = "Code not found"; status.classList.remove('hidden'); resetLoginBtn(); } return; }
+                currentUser = { code: code, name: finalName, isAdmin: false, isVip: false };
             }
 
-            // Standard Rep (Password 0000)
-            if (pass !== '0000' && pass !== '****') { 
-                if(!silent) { status.innerText = "Wrong Password"; status.classList.remove('hidden'); resetLoginBtn(); }
-                return; 
-            } 
-            
-            // Hardcoded Rep Check
-            if (repDirectory[code]) {
-                let finalName = repDirectory[code];
-                if(allSalesData.length > 0) myCustomers = allSalesData.filter(c => c.repCode == code); 
-                currentUser = { code: code, name: finalName, isAdmin: false, isVip: false }; 
-                localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
-                await refreshData(); 
-                document.getElementById('loginSection').classList.add('hidden'); 
-                document.getElementById('appSection').classList.remove('hidden'); 
-                document.body.classList.add('loaded'); 
-                document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; 
-                listenForPdfStatus(); 
-                listenForHistory(); 
-                if(!silent) resetLoginBtn();
-                return;
-            }
-
-            // Fallback
-            const customers = allSalesData.filter(c => c.repCode == code); 
-            if (customers.length > 0) { 
-                 myCustomers = customers;
-                 currentUser = { code: code, name: customers[0].csvRepName, isAdmin: false, isVip: false };
-                 localStorage.setItem('salesMasterUser', JSON.stringify(currentUser));
-                 await refreshData();
-                 document.getElementById('loginSection').classList.add('hidden');
-                 document.getElementById('appSection').classList.remove('hidden');
-                 document.body.classList.add('loaded');
-                 document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`;
-                 listenForPdfStatus(); listenForHistory();
-                 if(!silent) resetLoginBtn();
-                 return;
-            }
-            
-            if(silent) return;
-
-            if(!silent) { status.innerText = "Code not found"; status.classList.remove('hidden'); resetLoginBtn(); }
+            myCustomers = customers;
+            localStorage.setItem('salesMasterUser', JSON.stringify(currentUser)); 
+            await refreshData(); 
+            document.getElementById('loginSection').classList.add('hidden'); 
+            document.getElementById('appSection').classList.remove('hidden'); 
+            document.body.classList.add('loaded'); 
+            document.getElementById('welcomeUserText').innerText = `Welcome ${currentUser.name}`; 
+            listenForPdfStatus(); 
+            listenForHistory(); 
+            if(!silent) resetLoginBtn();
         }
 
         function resetLoginBtn() { const btn = document.getElementById('btnLogin'); btn.innerHTML = 'LOGIN'; btn.classList.remove('btn-loading'); }
@@ -742,10 +701,20 @@
             adminTasks = []; taskSnap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() }));
             const repSnap = await db.collection('reports').orderBy('timestamp', 'desc').get();
             globalHistory = []; repSnap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() }));
-            const logSnap = await db.collection('export_logs').orderBy('timestamp', 'desc').limit(200).get();
-            adminExportLogs = []; logSnap.forEach(doc => adminExportLogs.push({ docId: doc.id, ...doc.data() }));
         }
-        function switchAdminTab(tab) { ['assign','history','reports','exports'].forEach(t => { document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; }); document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } if(tab === 'exports') { renderAdminRequests(); } }
+
+        function switchAdminTab(tab) { 
+            // REQ 4: Assign tab removed
+            ['history','reports','exports'].forEach(t => { 
+                document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); 
+                document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; 
+            }); 
+            document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden'); 
+            document.getElementById(`btnTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent"; 
+            if(tab === 'reports') { initAdminReportFilters(); renderAdminReports(); } 
+            if(tab === 'exports') { renderAdminRequests(); } 
+        }
+
         function initAdminReportFilters() { const sel = document.getElementById('adminReportRepFilter'); if(sel.options.length > 1) return; for (const [code, name] of Object.entries(repDirectory)) sel.innerHTML += `<option value="${code}">${name} (${code})</option>`; }
         
         function renderAdminTasks() { 
@@ -753,21 +722,116 @@
             const container = document.getElementById('adminTaskList');
             container.innerHTML = '';
             
-            if(!f) { container.innerHTML = '<div class="text-gray-400 text-center text-xs mt-10">Enter search term to view tasks.</div>'; return; }
+            if(!f && adminTasks.length > 0) {
+                 // Show all if no filter, sorted by date
+            }
 
-            const filtered = adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f));
+            const filtered = adminTasks.filter(t => 
+                (t.repName && t.repName.toLowerCase().includes(f)) || 
+                (t.customerName && t.customerName.toLowerCase().includes(f)) ||
+                (t.repResponse && t.repResponse.toLowerCase().includes(f))
+            );
             
+            if(filtered.length === 0) { container.innerHTML = '<div class="text-gray-400 text-center text-xs mt-10">No tasks found.</div>'; return; }
+
             filtered.slice(0, 50).forEach(t => {
-                const isDone = t.status === 'completed';
-                const statusColor = isDone ? 'text-green-600' : 'text-orange-500';
+                const isDone = t.status === 'confirmed';
+                const statusColor = isDone ? 'text-green-600' : (t.status === 'responded' ? 'text-blue-600' : 'text-orange-500');
+                const responseText = t.repResponse ? `<div class="mt-1 p-1 bg-yellow-50 text-xs text-gray-600 font-bold border-l-2 border-yellow-500">Rep: ${t.repResponse}</div>` : '';
+                
                 const div = document.createElement('div');
-                div.className = `p-3 rounded border flex justify-between items-center ${isDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`;
-                div.innerHTML = `<div><div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div><div class="text-xs text-gray-500 mt-1">${t.assignedDate} | ${t.taskDetail}</div><div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div></div><div>${isDone ? `<button onclick="adminRestoreTask('${t.docId}')" class="text-blue-500 text-xs underline font-bold">Undo</button>` : `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-rotate-left"></i></button>`}</div>`;
+                div.className = `p-3 rounded border flex justify-between items-start ${isDone ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`;
+                div.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-bold text-gray-800 text-sm">${t.repName} <span class="text-gray-400 text-xs">-></span> ${t.customerName}</div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            <span class="mr-2"><i class="fa-solid fa-calendar"></i> ${t.orderDate || t.assignedDate}</span>
+                            <span><i class="fa-solid fa-coins"></i> ${t.amount || '-'}</span>
+                        </div>
+                        <div class="text-xs text-gray-600 italic mt-1">${t.taskDetail}</div>
+                        ${responseText}
+                        <div class="text-[10px] font-bold uppercase mt-1 ${statusColor}">${t.status}</div>
+                    </div>
+                    <div>
+                        ${!isDone ? `<button onclick="adminDeleteTask('${t.docId}')" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>`;
                 container.appendChild(div);
             });
         }
-        async function adminRestoreTask(id) { if(confirm('Undo this task?')) await db.collection('admin_tasks').doc(id).update({status: 'pending'}); refreshData(); }
         async function adminDeleteTask(id) { if(confirm('Delete/Cancel task?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
+
+        // REQ 3: Import Task CSV Logic
+        function adminImportTaskCSV(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const rows = results.data;
+                    if (rows.length === 0) return alert("Empty CSV");
+
+                    const batch = db.batch();
+                    let count = 0;
+
+                    // Build Rep Name -> Code map from existing allSalesData to match safely
+                    const repMap = {};
+                    allSalesData.forEach(c => {
+                        if (c.repCode && c.csvRepName) repMap[c.csvRepName.toUpperCase()] = c.repCode;
+                    });
+                    // Also add from directory
+                    for(let [k,v] of Object.entries(repDirectory)) { repMap[v.toUpperCase()] = k; }
+
+                    rows.forEach(row => {
+                        // Header Mapping: 客户编号, 客户名称, 总金额, 订单日期, 业务员, 备注
+                        const code = row['客户编号'] || row['Code'];
+                        const name = row['客户名称'] || row['Name'];
+                        const amt = row['总金额'] || row['Amount'];
+                        const date = row['订单日期'] || row['Date'];
+                        const repName = row['业务员'] || row['Rep'];
+                        const note = row['备注'] || row['Note'];
+
+                        if (repName && code) {
+                            // Find Rep Code
+                            let targetRepCode = repMap[repName.toUpperCase().trim()];
+                            
+                            // Fallback lookup
+                            if(!targetRepCode) {
+                                const found = allSalesData.find(c => c.csvRepName.toUpperCase() === repName.toUpperCase().trim());
+                                if(found) targetRepCode = found.repCode;
+                            }
+
+                            if (targetRepCode) {
+                                const ref = db.collection('admin_tasks').doc();
+                                batch.set(ref, {
+                                    repCode: targetRepCode,
+                                    repName: repName,
+                                    customerId: code,
+                                    customerName: name,
+                                    amount: amt,
+                                    orderDate: date,
+                                    taskDetail: note,
+                                    status: 'pending',
+                                    assignedDate: new Date().toLocaleDateString(),
+                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                                count++;
+                            }
+                        }
+                    });
+
+                    if (count > 0) {
+                        await batch.commit();
+                        alert(`${count} Tasks Imported Successfully!`);
+                        input.value = ''; // Reset file input
+                        refreshData();
+                    } else {
+                        alert("No valid tasks imported. Check '业务员' (Rep) name matches system.");
+                    }
+                }
+            });
+        }
 
         function renderAdminReports() { 
             const dateVal = document.getElementById('adminReportDateFilter').value; 
@@ -786,31 +850,47 @@
             globalHistory.filter(r => { let matchDate = true; if (dateVal) { const rDate = new Date(r.date); const fDate = new Date(dateVal); matchDate = (rDate.toDateString() === fDate.toDateString()); } let matchRep = true; if (repVal) matchRep = (r.repCode === repVal); let matchText = true; if (textVal) matchText = (r.customerName && r.customerName.toLowerCase().includes(textVal)); return matchDate && matchRep && matchText; }).forEach(r => csv += `${new Date(r.date).toLocaleDateString()},${repDirectory[r.repCode] || r.repCode},${r.customerName},"${r.note}"\n`);
             const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `Reports_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click();
         }
-        function adminExportTasks() { let csv = "AssignedDate,Rep,Customer,Detail,Status\n"; const f = document.getElementById('adminTaskFilter').value.toLowerCase(); adminTasks.filter(t => t.repName.toLowerCase().includes(f) || t.customerName.toLowerCase().includes(f)).forEach(t => csv += `${t.assignedDate},${t.repName},${t.customerName},"${t.taskDetail}",${t.status}\n`); const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `Tasks_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); }
+        function adminExportTasks() { let csv = "OrderDate,Rep,Customer,Amount,Note,Status,Response\n"; const f = document.getElementById('adminTaskFilter').value.toLowerCase(); adminTasks.filter(t => (t.repName||"").toLowerCase().includes(f) || (t.customerName||"").toLowerCase().includes(f)).forEach(t => csv += `${t.orderDate},${t.repName},${t.customerName},${t.amount},"${t.taskDetail}",${t.status},"${t.repResponse||''}"\n`); const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `Tasks_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(link); link.click(); }
         
         async function renderAdminRequests() {
-            const list = document.getElementById('adminRequestList'); list.innerHTML = '<div class="text-center"><div class="spinner"></div></div>'; const snap = await db.collection('pdf_requests').where('status', '==', 'pending').get(); list.innerHTML = '';
+            const list = document.getElementById('adminRequestList'); 
+            const snap = await db.collection('pdf_requests').where('status', '==', 'pending').get(); 
+            list.innerHTML = '';
+            
+            // REQ 1: Notification Logic (Check if listener is better, but here we render)
+            // Real-time listener is below
+            
             let requests = []; snap.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
             requests.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
             if (requests.length === 0) { list.innerHTML = '<div class="text-gray-400 text-center p-4">No pending requests.</div>'; return; }
             requests.forEach(req => { const ts = req.timestamp ? new Date(req.timestamp.seconds*1000).toLocaleTimeString() : 'Just now'; list.innerHTML += `<div class="bg-white p-4 rounded shadow border-l-4 border-orange-400 flex justify-between items-center"><div><div class="font-bold text-gray-800">${req.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div><div class="text-sm text-gray-600">Requesting: <span class="font-mono bg-gray-100 px-1 rounded">${req.query}</span></div></div><div class="flex space-x-3"><button onclick="adminRejectRequest('${req.id}')" class="bg-red-100 text-red-600 w-10 h-10 rounded-full hover:bg-red-200"><i class="fa-solid fa-times"></i></button><button onclick="adminApproveRequest('${req.id}')" class="bg-green-100 text-green-600 w-10 h-10 rounded-full hover:bg-green-200"><i class="fa-solid fa-check"></i></button></div></div>`; });
         }
+        
+        // REQ 1: Real-time notification listener
+        let requestListener = null;
+        function listenForAdminRequests() {
+            if(requestListener) return;
+            requestListener = db.collection('pdf_requests').where('status', '==', 'pending')
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === "added") {
+                            const data = change.doc.data();
+                            // Trigger browser notification
+                            if (Notification.permission === "granted") {
+                                new Notification("New PDF Request", { 
+                                    body: `${data.repName} wants PDF for: ${data.query}`,
+                                    icon: APP_ICON_HD
+                                });
+                            }
+                        }
+                    });
+                    renderAdminRequests(); // Re-render list
+                });
+        }
+        
         async function adminApproveRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'approved'}); renderAdminRequests(); }
         async function adminRejectRequest(id) { await db.collection('pdf_requests').doc(id).update({status: 'rejected'}); renderAdminRequests(); }
-
-        function addAssignRow() { 
-            const container = document.getElementById('assignRowsContainer'); 
-            const rowId = Date.now() + Math.random(); 
-            let repCheckboxes = '<div class="h-24 overflow-y-auto border rounded p-2 bg-white">'; 
-            for (const [code, name] of Object.entries(repDirectory)) { 
-                repCheckboxes += `<label class="flex items-center space-x-2 mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded"><input type="checkbox" value="${code}" class="assign-rep-checkbox accent-primary"><span class="text-xs text-gray-700 font-bold">${name}</span></label>`; 
-            } 
-            repCheckboxes += '</div>'; 
-            const div = document.createElement('div'); div.className = "assign-row bg-gray-50 p-3 rounded border grid grid-cols-1 md:grid-cols-3 gap-2 relative"; div.innerHTML = `<button onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow hover:bg-red-600">X</button><div><label class="text-[10px] font-bold text-gray-500">SELECT REPS</label>${repCheckboxes}</div><div><label class="text-[10px] font-bold text-gray-500">CUSTOMER</label><div class="relative"><input type="text" placeholder="Search..." class="w-full p-2 border rounded text-sm" onkeyup="searchAdminCustInRow(this, '${rowId}')"><div id="res-${rowId}" class="absolute z-10 bg-white w-full max-h-40 overflow-auto shadow hidden border"></div><input type="hidden" class="assign-cust-id"><input type="hidden" class="assign-cust-name"></div></div><div><label class="text-[10px] font-bold text-gray-500">INSTRUCTION</label><input type="text" class="assign-note w-full p-2 border rounded text-sm" placeholder="Task details..."></div>`; container.appendChild(div); 
-        }
-        function searchAdminCustInRow(inp, rowId) { const val = inp.value.toLowerCase(); const box = document.getElementById(`res-${rowId}`); if(val.length<2) { box.classList.add('hidden'); return; } box.innerHTML = ''; box.classList.remove('hidden'); allSalesData.filter(c => c.name.toLowerCase().includes(val)).slice(0,10).forEach(c => { const d = document.createElement('div'); d.className = "p-2 hover:bg-blue-50 cursor-pointer border-b text-sm"; d.innerText = `${c.name} (${c.id})`; d.onclick = () => { inp.value = c.name; inp.parentElement.querySelector('.assign-cust-id').value = c.id; inp.parentElement.querySelector('.assign-cust-name').value = c.name; box.classList.add('hidden'); }; box.appendChild(d); }); }
-        async function adminSubmitBulkTasks() { const rows = document.querySelectorAll('.assign-row'); const batch = db.batch(); let count = 0; rows.forEach(row => { const cbs = row.querySelectorAll('.assign-rep-checkbox:checked'); const cid = row.querySelector('.assign-cust-id').value; const cnm = row.querySelector('.assign-cust-name').value; const nt = row.querySelector('.assign-note').value; if(cbs.length && cid && nt) { cbs.forEach(cb => { const ref = db.collection('admin_tasks').doc(); batch.set(ref, { repCode: cb.value, repName: repDirectory[cb.value], customerId: cid, customerName: cnm, taskDetail: nt, status: 'pending', assignedDate: new Date().toLocaleDateString(), timestamp: firebase.firestore.FieldValue.serverTimestamp() }); count++; }); } }); if(count>0) { await batch.commit(); alert('Tasks Assigned'); document.getElementById('assignRowsContainer').innerHTML = ''; addAssignRow(); } }
 
         // ================= SALES REP FUNCTIONS =================
         function getCustomerStats(custId) {
@@ -832,11 +912,76 @@
             });
         }
         function filterSidebarList(val) { applySidebarFilter(); }
-        async function loadAssignedTasksForRep() { const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', '==', 'pending').get(); adminTasks = []; snap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() })); }
+        async function loadAssignedTasksForRep() { 
+            // REQ 3: Load tasks that are not 'confirmed' (so pending or responded/remarked stay visible until checked)
+            const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', 'in', ['pending', 'responded']).get(); 
+            adminTasks = []; snap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() })); 
+        }
         function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
-        function renderAcceptTasks() { document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `<div class="bg-white p-4 rounded shadow mb-2 flex justify-between"><div><div class="font-bold">${t.customerName}</div><div class="text-xs">${t.taskDetail}</div></div><div class="flex space-x-3"><button onclick="addTaskToToday('${t.docId}', '${t.customerId}')" class="bg-gray-100 w-10 h-10 rounded-full hover:bg-green-200 text-green-600 shadow flex items-center justify-center"><i class="fa-solid fa-plus"></i></button><button onclick="completeAssignedTask('${t.docId}')" class="bg-primary w-10 h-10 rounded-full hover:bg-blue-800 text-white shadow flex items-center justify-center"><i class="fa-solid fa-check"></i></button></div></div>`).join(''); document.getElementById('assignedCountBadge').innerText = adminTasks.length; document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); }
-        function addTaskToToday(did, cid) { addToTask(cid); const btn = document.querySelector(`#accept-${did} button`); if(btn) btn.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>'; }
-        async function completeAssignedTask(docId) { if(!confirm("Mark completed?")) return; await db.collection('admin_tasks').doc(docId).update({ status: 'completed', completedDate: new Date().toISOString() }); const el = document.getElementById(`accept-${docId}`); el.classList.add('task-fade-out'); setTimeout(() => { adminTasks = adminTasks.filter(t => t.docId !== docId); renderAcceptTasks(); updateAssignedBadge(); }, 500); }
+        
+        // REQ 3: Updated Task Render Logic (Bell)
+        function renderAcceptTasks() { 
+            document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `
+            <div id="accept-${t.docId}" class="bg-white p-4 rounded shadow mb-3 border-l-4 border-primary relative">
+                <div class="pr-12">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-bold text-lg text-primary">${t.amount || '0'}</span>
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${t.orderDate}</span>
+                    </div>
+                    <div class="font-bold text-gray-800 text-sm">${t.customerName}</div>
+                    <div class="text-xs text-gray-400 font-mono mb-1">${t.customerId}</div>
+                    <div class="text-sm text-gray-600 italic bg-yellow-50 p-2 rounded mt-1 border border-yellow-100">${t.taskDetail}</div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="absolute right-2 top-2 flex flex-col space-y-2">
+                    <!-- Check Button (Confirm) -->
+                    <button onclick="confirmTaskReceipt('${t.docId}')" class="bg-green-500 text-white w-10 h-10 rounded-full shadow hover:bg-green-600 flex items-center justify-center">
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                    <!-- Circle Button (Remark) -->
+                    <button onclick="remarkOnTask('${t.docId}')" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow hover:bg-blue-600 flex items-center justify-center">
+                        <i class="fa-regular fa-circle"></i>
+                    </button>
+                </div>
+            </div>`).join(''); 
+            
+            document.getElementById('assignedCountBadge').innerText = adminTasks.length; 
+            document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); 
+        }
+
+        // REQ 3: Check Logic
+        async function confirmTaskReceipt(docId) {
+            if (confirm("Confirm receipt of order amount?")) { // YES/NO
+                await db.collection('admin_tasks').doc(docId).update({ 
+                    status: 'confirmed', 
+                    completedDate: new Date().toISOString() 
+                });
+                // Remove from view immediately
+                const el = document.getElementById(`accept-${docId}`);
+                el.classList.add('task-fade-out');
+                setTimeout(() => {
+                    adminTasks = adminTasks.filter(t => t.docId !== docId);
+                    renderAcceptTasks();
+                    updateAssignedBadge();
+                }, 500);
+            }
+        }
+
+        // REQ 3: Circle Logic (Remarks)
+        async function remarkOnTask(docId) {
+            const remark = prompt("Enter remarks:");
+            if (remark && remark.trim() !== "") {
+                await db.collection('admin_tasks').doc(docId).update({
+                    repResponse: remark,
+                    status: 'responded', // Updates status so admin knows
+                    responseDate: new Date().toISOString()
+                });
+                alert("Remark sent to Admin.");
+                // We keep it in the list but maybe update UI to show sent
+            }
+        }
+
         async function loadTasksFromCloud() { const d = await db.collection('daily_tasks').doc(currentUser.code).get(); if (d.exists && d.data().date === new Date().toLocaleDateString()) { todayTasks = d.data().tasks || []; } else { todayTasks = []; } }
         async function saveTasksToCloud() { if(!currentUser.isAdmin) await db.collection('daily_tasks').doc(currentUser.code).set({ date: new Date().toLocaleDateString(), tasks: todayTasks }); }
         async function loadHistoryFromCloud() { const snap = await db.collection('reports').where('repCode', '==', currentUser.code).get(); globalHistory = []; snap.forEach(doc => globalHistory.push({ docId: doc.id, ...doc.data() })); }
@@ -894,7 +1039,6 @@
             });
         }
 
-        // ================= PRODUCT, CART & REQUEST WORKFLOW =================
         function openProductPage() { document.getElementById('productSearchPage').classList.remove('hidden'); renderCartFab(); }
         function closeProductPage() { document.getElementById('productSearchPage').classList.add('hidden'); resetRequestButton(); }
 
@@ -956,9 +1100,8 @@
             let forceNew = (query.toLowerCase() === 'new');
             let forceOld = (query.toLowerCase() === 'old');
 
-            // Same filtering logic as generateAndReadyPDF (exclude out of stock)
             const filtered = allProductData.filter(p => {
-                if (p.stock <= 0) return false; // Exclude out of stock
+                if (p.stock <= 0) return false; 
                 
                 if (forceNew) return p.isNew === '1';
                 if (forceOld) return p.isNew === '2';
@@ -1011,12 +1154,10 @@
               });
         }
 
-        // --- FILTER LOGIC ---
         function handleProductSearch(val) {
             const container = document.getElementById('productResultsContainer');
             const filterMode = document.getElementById('productFilterSelect').value;
             
-            // Allow search if filtering by specific criteria even if text is empty
             if ((!val || val.length < 2) && filterMode === 'all') { 
                 currentProductResults = []; 
                 container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i><p>Type to search.</p></div>`; 
@@ -1034,7 +1175,6 @@
                      matchesText = searchTerms.every(term => productString.includes(term));
                 }
                 
-                // Filter Logic
                 if (filterMode === 'stock' && p.stock <= 0) return false;
                 if (filterMode === 'new' && p.isNew !== '1') return false;
                 if (filterMode === 'old' && p.isNew !== '2') return false;
@@ -1042,17 +1182,13 @@
                 return matchesText;
             });
 
-            // Update Request PDF button state
-            // Logic: Always active if there is a query or results
             const reqBtn = document.getElementById('btnRequestPDF');
-            
             reqBtn.disabled = false;
             reqBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
             reqBtn.classList.add('bg-primary', 'hover:bg-blue-900');
             
             if(val) checkExistingRequest(val);
             else {
-                 // Reset text if no specific query matched yet
                  document.getElementById('btnRequestText').innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Request PDF';
             }
 
@@ -1061,7 +1197,6 @@
                  return;
             }
 
-            // Render List - Mobile Optimized, No Buttons
             container.innerHTML = currentProductResults.map(p => {
                 const isOutOfStock = p.stock <= 0;
                 
@@ -1075,7 +1210,6 @@
                     `;
                 }
 
-                // Show Badge if Out of Stock
                 let statusHtml = '';
                 if (isOutOfStock) {
                     statusHtml = `<div class="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100">OUT OF STOCK</div>`;
@@ -1099,7 +1233,6 @@
             }).join('');
         }
 
-        // --- PRODUCT DETAIL & RH/LH LOGIC ---
         let currentDetailProduct = null;
 
         function openProductDetail(code) {
@@ -1113,7 +1246,6 @@
             document.getElementById('detailStock').innerText = p.stock > 0 ? p.stock : "0";
             document.getElementById('detailStock').className = p.stock > 0 ? "text-xl font-bold text-gray-800" : "text-xl font-bold text-red-500";
             
-            // Image Logic
             const img = document.getElementById('detailImage');
             img.src = `image/${p.code}.jpg`; 
             
@@ -1123,11 +1255,9 @@
             const inCart = cartItems.find(i => i.code === p.code);
             const currentQty = inCart ? inCart.qty : 0;
 
-            // Setup Input
             const qtyInput = document.getElementById('detailQtyInput');
             qtyInput.value = currentQty;
             
-            // Check stock for input logic
             qtyInput.onchange = function() {
                 let val = parseInt(this.value) || 0;
                 if (val > p.stock) {
@@ -1136,14 +1266,11 @@
                 }
                 if (val < 0) val = 0;
                 this.value = val;
-                
-                // Calculate difference to update cart
                 const currentInCart = getQtyInCart(p.code);
                 const diff = val - currentInCart;
                 if (diff !== 0) updateCart(p.code, diff);
             };
 
-            // Setup buttons with stock check
             document.getElementById('detailBtnAdd').onclick = () => { 
                 const current = getQtyInCart(p.code);
                 if (current < p.stock) {
@@ -1164,18 +1291,15 @@
         function closeProductDetail() { document.getElementById('productDetailModal').classList.add('hidden'); }
         function getQtyInCart(code) { const i = cartItems.find(x => x.code === code); return i ? i.qty : 0; }
 
-        // ★★★ CART LOGIC WITH RH/LH AUTO ADD ★★★
         function updateCart(code, change, isAutoPair = false) {
             const product = allProductData.find(p => p.code === code);
             if(!product) return;
             
             let item = cartItems.find(i => i.code === code);
             
-            // Validation: Cannot add more than stock (if adding)
             if (change > 0) {
                 const currentQty = item ? item.qty : 0;
                 if (currentQty + change > product.stock) {
-                    // Only alert if manual action to avoid popup spam on auto-add
                     if(!isAutoPair) alert(`Stock limit reached for ${product.code}`);
                     return;
                 }
@@ -1197,12 +1321,9 @@
             item.qty += change;
             if(item.qty <= 0) cartItems = cartItems.filter(i => i.code !== code);
             
-            // Update UI
             renderCartFab();
             if(!document.getElementById('cartModal').classList.contains('hidden')) renderCartList();
 
-            // Auto-Pairing Logic (RH/LH)
-            // Rule: If not already triggered by recursion, and we are ADDING items
             if (!isAutoPair && change > 0) {
                 checkAndAddPair(product, change);
             }
@@ -1211,9 +1332,6 @@
         function checkAndAddPair(product, change) {
             let pairName = null;
             const name = product.name;
-            
-            // Check for strict " RH " or " LH " (spaces matter to avoid partial matches inside words)
-            // Also covers end of string cases if strictly formatted
             if (name.includes(" RH ")) {
                 pairName = name.replace(" RH ", " LH ");
             } else if (name.includes(" LH ")) {
@@ -1223,21 +1341,16 @@
             if (pairName) {
                 const pairProduct = allProductData.find(p => p.name === pairName);
                 if (pairProduct) {
-                    // Recursively add the pair, setting isAutoPair to true to prevent infinite loop
                     updateCart(pairProduct.code, change, true);
                 }
             }
         }
 
-        // Delete Button Logic for Cart
         function deleteFromCart(code) {
              if(confirm('Remove this item from cart?')) {
-                 // Remove item by filtering
                  cartItems = cartItems.filter(i => i.code !== code);
-                 // Update UI
                  renderCartFab();
                  renderCartList();
-                 // If detail modal is open for this item, reset input
                  if (!document.getElementById('productDetailModal').classList.contains('hidden') && 
                      currentDetailProduct && currentDetailProduct.code === code) {
                      document.getElementById('detailQtyInput').value = 0;
@@ -1278,7 +1391,6 @@
                             <button onclick="updateCart('${i.code}', 1)" class="text-green-600 font-bold px-3 py-1 bg-white border rounded shadow-sm hover:bg-green-50">+</button>
                         </div>
                     </div>
-                    <!-- Delete Button -->
                     <button onclick="deleteFromCart('${i.code}')" class="absolute top-3 right-3 text-red-400 hover:text-red-600">
                         <i class="fa-solid fa-trash-can text-lg"></i>
                     </button>
@@ -1287,7 +1399,6 @@
             document.getElementById('cartTotalPrice').innerText = total.toFixed(2);
         }
 
-        // Cart Customer Search (Single Customer)
         function searchCartCustomer(val) {
             const res = document.getElementById('cartCustResults');
             if(val.length < 2) { res.classList.add('hidden'); return; }
@@ -1318,7 +1429,6 @@
             
             const total = cartItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
             
-            // New Format: Code : Qty = Total
             let msg = `*New Order*\n*Customer:* ${cartCustomer.name}\n------------------\n`;
             cartItems.forEach(i => {
                 msg += `${i.code} : ${i.qty} = ${(i.qty*i.price).toFixed(2)}\n`;
@@ -1330,10 +1440,9 @@
 
         function downloadCartCsv() {
             if(cartItems.length === 0) return alert("Cart is empty");
-            if(!cartCustomer) return alert("Please select a customer first."); // Validation Added
+            if(!cartCustomer) return alert("Please select a customer first."); 
 
-            // Format: Row 1 Empty. Row 2+: Code, A, Qty
-            let csv = "\n"; 
+            let csv = "\uFEFF驭邦码,仓库,数量\n";
             cartItems.forEach(i => {
                 csv += `${i.code},A,${i.qty}\n`;
             });
@@ -1355,7 +1464,6 @@
         function resetRequestButton() {
             const btn = document.getElementById('btnRequestPDF');
             const text = document.getElementById('btnRequestText');
-            // Always active default state
             btn.className = "relative overflow-hidden bg-primary hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap transition-all duration-300 min-w-[180px]";
             btn.onclick = requestPdfApproval; 
             btn.disabled = false;
@@ -1385,9 +1493,7 @@
             if (currentProductResults.length === 0) return alert("Search for products first!");
             const query = document.getElementById('productSearchInput').value;
             
-            // NEW LOGIC: VIP Instant Approve
             if (currentUser && currentUser.isVip) {
-                // Immediate 'approved' status
                 db.collection('pdf_requests').add({
                     repCode: currentUser.code,
                     repName: currentUser.name,
@@ -1395,10 +1501,8 @@
                     status: 'approved',
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                // Manually trigger UI update to 'Download' state immediately
                 updateButtonState('approved');
             } else {
-                // Standard Logic: Pending
                 db.collection('pdf_requests').add({
                     repCode: currentUser.code,
                     repName: currentUser.name,
@@ -1437,7 +1541,6 @@
 
             const isFullNewSearch = (query.toLowerCase() === 'new');
             
-            // Filter: Ensure ONLY items with stock > 0 are in the PDF
             const pdfItems = currentProductResults.filter(p => p.stock > 0);
             
             const tableData = pdfItems.map(p => {
@@ -1469,6 +1572,20 @@
             btn.className = "bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow flex items-center justify-center whitespace-nowrap min-w-[180px]";
             text.innerHTML = '<i class="fa-solid fa-folder-open mr-2"></i> Open PDF';
             btn.onclick = () => window.open(currentPdfBlobUrl, '_blank');
+        }
+
+        function updateAssignedBadge() {
+            const badge = document.getElementById('assignedCountBadge');
+            const tasks = (typeof adminTasks !== 'undefined' && Array.isArray(adminTasks)) ? adminTasks : [];
+            
+            if (badge) {
+                if (tasks.length > 0) {
+                    badge.innerText = tasks.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
         }
     </script>
 </body>
