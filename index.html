@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Master Pro 11.9</title>
+    <title>Sales Master Pro 11.9.2</title>
     
     <script>
         const APP_ICON_HD = "icon-512.png"; 
@@ -162,7 +162,6 @@
                 </div>
             </div>
             <div class="flex bg-blue-800 text-sm overflow-x-auto">
-                <!-- Modified: Removed Assign Tab, Tasks is default -->
                 <button onclick="switchAdminTab('history')" id="btnTabHistory" class="flex-1 py-3 hover:bg-blue-700 text-accent font-bold border-b-2 border-accent">Tasks</button>
                 <button onclick="switchAdminTab('reports')" id="btnTabReports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Reports</button>
                 <button onclick="switchAdminTab('exports')" id="btnTabExports" class="flex-1 py-3 hover:bg-blue-700 text-gray-300">Req Logs</button>
@@ -172,18 +171,11 @@
         <main id="adminMain" class="flex-1 overflow-y-auto p-4 relative">
             <div id="adminPullIndicator" class="pull-indicator"><i class="fa-solid fa-arrow-down mr-2"></i> Pull to refresh</div>
 
-            <!-- Modified: Tasks Tab with Import -->
             <div id="adminTabHistory" class="max-w-5xl mx-auto space-y-4">
                 <div class="bg-white p-4 rounded-lg shadow mb-4">
                      <div class="flex justify-between items-center">
                         <h3 class="font-bold text-gray-700"><i class="fa-solid fa-list-check mr-2"></i>Task Management</h3>
-                        <!-- Import Button -->
-                        <div>
-                            <input type="file" id="taskCsvInput" accept=".csv" class="hidden" onchange="adminImportTaskCSV(this)">
-                            <button onclick="document.getElementById('taskCsvInput').click()" class="bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
-                                <i class="fa-solid fa-file-import mr-2"></i> Import Tasks (CSV)
-                            </button>
-                        </div>
+                        <div class="text-xs text-gray-500 italic">Syncing local tasks.csv automatically...</div>
                      </div>
                 </div>
 
@@ -464,7 +456,7 @@
         </div>
     </div>
 
-    <!-- Assigned Task Modal (Updated Logic) -->
+    <!-- Assigned Task Modal -->
     <div id="assignedTaskModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-2xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
             <div class="p-4 bg-primary text-white flex justify-between items-center">
@@ -607,7 +599,6 @@
                     })); 
 
                     if(currentUser && !currentUser.isAdmin) {
-                        // REQ 2: OBENG (10595) SEES ALL
                         if(currentUser.code === '10595') {
                             myCustomers = allSalesData;
                         } else {
@@ -651,9 +642,11 @@
                 document.getElementById('loginSection').classList.add('hidden'); 
                 document.getElementById('adminSection').classList.remove('hidden'); 
                 document.body.classList.add('loaded');
-                // REQ 1: Notification Permission
                 if ("Notification" in window) Notification.requestPermission();
                 
+                // Trigger auto-sync of local CSV
+                syncLocalTasksCsvToFirebase();
+
                 initAdminReportFilters(); 
                 if(!silent) resetLoginBtn();
                 return; 
@@ -661,9 +654,7 @@
             
             // Logic for Reps
             let finalName = repDirectory[code] || "Sales Rep";
-            // Check matching customers
             let customers = [];
-            // REQ 2: OBENG
             if(code === '10595') {
                 if(allSalesData.length > 0) customers = allSalesData; 
                 finalName = "OBENG";
@@ -704,7 +695,6 @@
         }
 
         function switchAdminTab(tab) { 
-            // REQ 4: Assign tab removed
             ['history','reports','exports'].forEach(t => { 
                 document.getElementById(`adminTab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('hidden'); 
                 document.getElementById(`btnTab${t.charAt(0).toUpperCase()+t.slice(1)}`).className = "flex-1 py-3 hover:bg-blue-700 text-gray-300"; 
@@ -722,9 +712,7 @@
             const container = document.getElementById('adminTaskList');
             container.innerHTML = '';
             
-            if(!f && adminTasks.length > 0) {
-                 // Show all if no filter, sorted by date
-            }
+            if(!f && adminTasks.length > 0) {}
 
             const filtered = adminTasks.filter(t => 
                 (t.repName && t.repName.toLowerCase().includes(f)) || 
@@ -760,74 +748,84 @@
         }
         async function adminDeleteTask(id) { if(confirm('Delete/Cancel task?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
 
-        // REQ 3: Import Task CSV Logic
-        function adminImportTaskCSV(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            Papa.parse(file, {
+        // REQ 2: Auto Sync Local CSV Logic
+        function syncLocalTasksCsvToFirebase() {
+            Papa.parse("tasks.csv", {
+                download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: async function(results) {
                     const rows = results.data;
-                    if (rows.length === 0) return alert("Empty CSV");
+                    if (rows.length === 0) {
+                        console.log("Tasks CSV is empty or not found.");
+                        return;
+                    }
 
                     const batch = db.batch();
                     let count = 0;
 
-                    // Build Rep Name -> Code map from existing allSalesData to match safely
+                    // Build Rep Name -> Code map
                     const repMap = {};
                     allSalesData.forEach(c => {
                         if (c.repCode && c.csvRepName) repMap[c.csvRepName.toUpperCase()] = c.repCode;
                     });
-                    // Also add from directory
                     for(let [k,v] of Object.entries(repDirectory)) { repMap[v.toUpperCase()] = k; }
 
+                    // Loop through CSV rows
                     rows.forEach(row => {
-                        // Header Mapping: 客户编号, 客户名称, 总金额, 订单日期, 业务员, 备注
-                        const code = row['客户编号'] || row['Code'];
-                        const name = row['客户名称'] || row['Name'];
-                        const amt = row['总金额'] || row['Amount'];
-                        const date = row['订单日期'] || row['Date'];
-                        const repName = row['业务员'] || row['Rep'];
-                        const note = row['备注'] || row['Note'];
+                        // Headers: CODE, NAME, AMOUNT, DATE, REPNAME, MARK
+                        const code = row['CODE'];
+                        const name = row['NAME'];
+                        const amt = row['AMOUNT'];
+                        const date = row['DATE'];
+                        const repName = row['REPNAME'];
+                        const mark = row['MARK'];
 
                         if (repName && code) {
-                            // Find Rep Code
                             let targetRepCode = repMap[repName.toUpperCase().trim()];
                             
-                            // Fallback lookup
+                            // Fallback lookup by checking startsWith or includes if exact match fails
                             if(!targetRepCode) {
+                                // Try finding in allSalesData
                                 const found = allSalesData.find(c => c.csvRepName.toUpperCase() === repName.toUpperCase().trim());
                                 if(found) targetRepCode = found.repCode;
                             }
 
                             if (targetRepCode) {
-                                const ref = db.collection('admin_tasks').doc();
-                                batch.set(ref, {
-                                    repCode: targetRepCode,
-                                    repName: repName,
-                                    customerId: code,
-                                    customerName: name,
-                                    amount: amt,
-                                    orderDate: date,
-                                    taskDetail: note,
-                                    status: 'pending',
-                                    assignedDate: new Date().toLocaleDateString(),
-                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                                });
-                                count++;
+                                // De-duplication check against currently loaded adminTasks
+                                // Unique Key: CustomerId + Amount + Date
+                                const exists = adminTasks.some(t => 
+                                    t.customerId === code && 
+                                    t.amount === amt && 
+                                    t.orderDate === date
+                                );
+
+                                if (!exists) {
+                                    const ref = db.collection('admin_tasks').doc();
+                                    batch.set(ref, {
+                                        repCode: targetRepCode,
+                                        repName: repName,
+                                        customerId: code,
+                                        customerName: name,
+                                        amount: amt,
+                                        orderDate: date,
+                                        taskDetail: mark,
+                                        status: 'pending',
+                                        assignedDate: new Date().toLocaleDateString(),
+                                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                                    });
+                                    count++;
+                                }
                             }
                         }
                     });
 
                     if (count > 0) {
                         await batch.commit();
-                        alert(`${count} Tasks Imported Successfully!`);
-                        input.value = ''; // Reset file input
+                        console.log(`Synced ${count} new tasks from local CSV.`);
                         refreshData();
                     } else {
-                        alert("No valid tasks imported. Check '业务员' (Rep) name matches system.");
+                        console.log("No new tasks to sync from local CSV.");
                     }
                 }
             });
@@ -857,9 +855,6 @@
             const snap = await db.collection('pdf_requests').where('status', '==', 'pending').get(); 
             list.innerHTML = '';
             
-            // REQ 1: Notification Logic (Check if listener is better, but here we render)
-            // Real-time listener is below
-            
             let requests = []; snap.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
             requests.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
@@ -867,7 +862,6 @@
             requests.forEach(req => { const ts = req.timestamp ? new Date(req.timestamp.seconds*1000).toLocaleTimeString() : 'Just now'; list.innerHTML += `<div class="bg-white p-4 rounded shadow border-l-4 border-orange-400 flex justify-between items-center"><div><div class="font-bold text-gray-800">${req.repName} <span class="text-xs text-gray-400 font-normal">(${ts})</span></div><div class="text-sm text-gray-600">Requesting: <span class="font-mono bg-gray-100 px-1 rounded">${req.query}</span></div></div><div class="flex space-x-3"><button onclick="adminRejectRequest('${req.id}')" class="bg-red-100 text-red-600 w-10 h-10 rounded-full hover:bg-red-200"><i class="fa-solid fa-times"></i></button><button onclick="adminApproveRequest('${req.id}')" class="bg-green-100 text-green-600 w-10 h-10 rounded-full hover:bg-green-200"><i class="fa-solid fa-check"></i></button></div></div>`; });
         }
         
-        // REQ 1: Real-time notification listener
         let requestListener = null;
         function listenForAdminRequests() {
             if(requestListener) return;
@@ -876,7 +870,6 @@
                     snapshot.docChanges().forEach(change => {
                         if (change.type === "added") {
                             const data = change.doc.data();
-                            // Trigger browser notification
                             if (Notification.permission === "granted") {
                                 new Notification("New PDF Request", { 
                                     body: `${data.repName} wants PDF for: ${data.query}`,
@@ -885,7 +878,7 @@
                             }
                         }
                     });
-                    renderAdminRequests(); // Re-render list
+                    renderAdminRequests(); 
                 });
         }
         
@@ -913,13 +906,11 @@
         }
         function filterSidebarList(val) { applySidebarFilter(); }
         async function loadAssignedTasksForRep() { 
-            // REQ 3: Load tasks that are not 'confirmed' (so pending or responded/remarked stay visible until checked)
             const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', 'in', ['pending', 'responded']).get(); 
             adminTasks = []; snap.forEach(doc => adminTasks.push({ docId: doc.id, ...doc.data() })); 
         }
         function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
         
-        // REQ 3: Updated Task Render Logic (Bell)
         function renderAcceptTasks() { 
             document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `
             <div id="accept-${t.docId}" class="bg-white p-4 rounded shadow mb-3 border-l-4 border-primary relative">
@@ -933,13 +924,10 @@
                     <div class="text-sm text-gray-600 italic bg-yellow-50 p-2 rounded mt-1 border border-yellow-100">${t.taskDetail}</div>
                 </div>
                 
-                <!-- Action Buttons -->
                 <div class="absolute right-2 top-2 flex flex-col space-y-2">
-                    <!-- Check Button (Confirm) -->
                     <button onclick="confirmTaskReceipt('${t.docId}')" class="bg-green-500 text-white w-10 h-10 rounded-full shadow hover:bg-green-600 flex items-center justify-center">
                         <i class="fa-solid fa-check"></i>
                     </button>
-                    <!-- Circle Button (Remark) -->
                     <button onclick="remarkOnTask('${t.docId}')" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow hover:bg-blue-600 flex items-center justify-center">
                         <i class="fa-regular fa-circle"></i>
                     </button>
@@ -950,14 +938,12 @@
             document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); 
         }
 
-        // REQ 3: Check Logic
         async function confirmTaskReceipt(docId) {
-            if (confirm("Confirm receipt of order amount?")) { // YES/NO
+            if (confirm("Confirm receipt of order amount?")) { 
                 await db.collection('admin_tasks').doc(docId).update({ 
                     status: 'confirmed', 
                     completedDate: new Date().toISOString() 
                 });
-                // Remove from view immediately
                 const el = document.getElementById(`accept-${docId}`);
                 el.classList.add('task-fade-out');
                 setTimeout(() => {
@@ -968,17 +954,15 @@
             }
         }
 
-        // REQ 3: Circle Logic (Remarks)
         async function remarkOnTask(docId) {
             const remark = prompt("Enter remarks:");
             if (remark && remark.trim() !== "") {
                 await db.collection('admin_tasks').doc(docId).update({
                     repResponse: remark,
-                    status: 'responded', // Updates status so admin knows
+                    status: 'responded', 
                     responseDate: new Date().toISOString()
                 });
                 alert("Remark sent to Admin.");
-                // We keep it in the list but maybe update UI to show sent
             }
         }
 
@@ -1324,11 +1308,13 @@
             renderCartFab();
             if(!document.getElementById('cartModal').classList.contains('hidden')) renderCartList();
 
+            // REQ 1: Auto Pair (Fixed)
             if (!isAutoPair && change > 0) {
                 checkAndAddPair(product, change);
             }
         }
 
+        // REQ 1: Helper function for pairing
         function checkAndAddPair(product, change) {
             let pairName = null;
             const name = product.name;
