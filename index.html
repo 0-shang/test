@@ -586,7 +586,7 @@
 
         function loadCustomersCSV() { 
             Papa.parse("customers.csv", { 
-                download: true, header: true, skipEmptyLines: true,
+                download: true, header: true, skipEmptyLines: true, encoding: "UTF-8",
                 error: function(err, file, inputElem, reason) { alert("CSV Error: " + err.message); },
                 complete: function(results) { 
                     allSalesData = results.data.map(item => ({ 
@@ -611,7 +611,7 @@
         
         function loadProductCSV() { 
             Papa.parse("products.csv", { 
-                download: true, header: true, skipEmptyLines: true, 
+                download: true, header: true, skipEmptyLines: true, encoding: "UTF-8",
                 complete: function(results) { 
                     allProductData = results.data.map(item => ({ 
                         code: (item.Code||item.code||"").trim(), 
@@ -644,7 +644,6 @@
                 document.body.classList.add('loaded');
                 if ("Notification" in window) Notification.requestPermission();
                 
-                // Trigger auto-sync of local CSV
                 syncLocalTasksCsvToFirebase();
 
                 initAdminReportFilters(); 
@@ -748,84 +747,81 @@
         }
         async function adminDeleteTask(id) { if(confirm('Delete/Cancel task?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
 
-        // REQ 2: Auto Sync Local CSV Logic
-        function syncLocalTasksCsvToFirebase() {
-            Papa.parse("tasks.csv", {
+        // REQ: Auto Sync with Dynamic Filename, Date, Balance, and Smart Dedup/Overwrite
+        async function syncLocalTasksCsvToFirebase() {
+            const csvFileName = prompt("Enter CSV Filename:", "tasks2026-02-18.csv");
+            if (!csvFileName) return;
+
+            const dateMatch = csvFileName.match(/\d{4}-\d{2}-\d{2}/);
+            const tableDate = dateMatch ? dateMatch[0] : new Date().toLocaleDateString();
+
+            Papa.parse(csvFileName, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
+                encoding: "UTF-8",
                 complete: async function(results) {
                     const rows = results.data;
-                    if (rows.length === 0) {
-                        console.log("Tasks CSV is empty or not found.");
-                        return;
-                    }
+                    if (rows.length === 0) return;
 
                     const batch = db.batch();
                     let count = 0;
 
-                    // Build Rep Name -> Code map
                     const repMap = {};
-                    allSalesData.forEach(c => {
-                        if (c.repCode && c.csvRepName) repMap[c.csvRepName.toUpperCase()] = c.repCode;
-                    });
+                    allSalesData.forEach(c => { if (c.repCode && c.csvRepName) repMap[c.csvRepName.toUpperCase()] = c.repCode; });
                     for(let [k,v] of Object.entries(repDirectory)) { repMap[v.toUpperCase()] = k; }
 
-                    // Loop through CSV rows
-                    rows.forEach(row => {
-                        // Headers: CODE, NAME, AMOUNT, DATE, REPNAME, MARK
-                        const code = row['CODE'];
-                        const name = row['NAME'];
-                        const amt = row['AMOUNT'];
-                        const date = row['DATE'];
-                        const repName = row['REPNAME'];
-                        const mark = row['MARK'];
+                    for (const row of rows) {
+                        const code = (row['CODE'] || "").trim();
+                        const name = (row['NAME'] || "").trim();
+                        const amt = (row['AMOUNT'] || "").trim();
+                        const date = (row['DATE'] || "").trim();
+                        const repName = (row['REPNAME'] || "").trim();
+                        const mark = (row['MARK'] || "").trim();
+                        const balance = (row['BALANCE'] || "0").trim();
 
                         if (repName && code) {
-                            let targetRepCode = repMap[repName.toUpperCase().trim()];
-                            
-                            // Fallback lookup by checking startsWith or includes if exact match fails
-                            if(!targetRepCode) {
-                                // Try finding in allSalesData
-                                const found = allSalesData.find(c => c.csvRepName.toUpperCase() === repName.toUpperCase().trim());
-                                if(found) targetRepCode = found.repCode;
-                            }
-
+                            let targetRepCode = repMap[repName.toUpperCase()];
                             if (targetRepCode) {
-                                // De-duplication check against currently loaded adminTasks
-                                // Unique Key: CustomerId + Amount + Date
-                                const exists = adminTasks.some(t => 
-                                    t.customerId === code && 
-                                    t.amount === amt && 
-                                    t.orderDate === date
+                                // 1. Check for exact duplicate
+                                const exactMatch = adminTasks.find(t => 
+                                    t.customerId === code && t.amount === amt && t.orderDate === date
                                 );
+                                if (exactMatch) continue;
 
-                                if (!exists) {
-                                    const ref = db.collection('admin_tasks').doc();
-                                    batch.set(ref, {
-                                        repCode: targetRepCode,
-                                        repName: repName,
-                                        customerId: code,
-                                        customerName: name,
-                                        amount: amt,
-                                        orderDate: date,
-                                        taskDetail: mark,
-                                        status: 'pending',
-                                        assignedDate: new Date().toLocaleDateString(),
-                                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                                    });
-                                    count++;
-                                }
+                                // 2. Check for same customer ID but different date (overwrite/replace pending)
+                                const oldTasks = adminTasks.filter(t => t.customerId === code && t.status === 'pending');
+                                oldTasks.forEach(old => {
+                                    batch.delete(db.collection('admin_tasks').doc(old.docId));
+                                });
+
+                                // 3. Set New Task
+                                const ref = db.collection('admin_tasks').doc();
+                                batch.set(ref, {
+                                    repCode: targetRepCode,
+                                    repName: repName,
+                                    customerId: code,
+                                    customerName: name,
+                                    amount: amt,
+                                    orderDate: date,
+                                    taskDetail: mark,
+                                    balance: balance,
+                                    tableDate: tableDate,
+                                    status: 'pending',
+                                    assignedDate: new Date().toLocaleDateString(),
+                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                                count++;
                             }
                         }
-                    });
+                    }
 
                     if (count > 0) {
                         await batch.commit();
-                        console.log(`Synced ${count} new tasks from local CSV.`);
+                        alert(`Synced ${count} tasks from ${csvFileName}`);
                         refreshData();
                     } else {
-                        console.log("No new tasks to sync from local CSV.");
+                        alert("No new or modified tasks to sync.");
                     }
                 }
             });
@@ -890,20 +886,45 @@
             const now = new Date(); const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay() + 1); startOfWeek.setHours(0,0,0,0); const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             let week = 0, month = 0; globalHistory.forEach(h => { if (h.customerId === custId) { const d = new Date(h.date); if (d >= startOfWeek) week++; if (d >= startOfMonth) month++; } }); return { week, month };
         }
+
+        // REQ: Display Credit and Balance in Sidebar
         function applySidebarFilter() {
             const mode = document.getElementById('sidebarFilterMode').value; const q = document.querySelector('#taskSidebar input').value.toLowerCase();
-            let filtered = myCustomers.filter(c => c.name.toLowerCase().includes(q));
+            
+            const balanceMap = {};
+            adminTasks.forEach(t => { balanceMap[t.customerId] = t.balance; });
+
+            let filtered = myCustomers.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
             if (mode === 'missed_week') { filtered = filtered.filter(c => getCustomerStats(c.id).week === 0); } 
             else if (mode === 'missed_month') { filtered = filtered.filter(c => getCustomerStats(c.id).month === 0); }
+            
             const list = document.getElementById('customerSidebarList'); list.innerHTML = '';
             filtered.slice(0, 200).forEach(c => {
                 const stats = getCustomerStats(c.id);
+                const balance = balanceMap[c.id] || "0.00";
+                
                 const item = document.createElement('div');
                 item.className = "flex justify-between items-center bg-white p-3 rounded border hover:shadow cursor-pointer mb-2";
-                item.innerHTML = `<div><div class="font-bold text-gray-700 text-sm">${c.name}</div><div class="text-xs text-gray-400">${c.id}</div></div><div class="flex items-center space-x-2"><div class="text-[10px] text-gray-500 text-right mr-2"><div>Week: <span class="font-bold ${stats.week==0?'text-red-500':'text-green-600'}">${stats.week}</span></div><div>Month: <span class="font-bold ${stats.month==0?'text-red-500':'text-green-600'}">${stats.month}</span></div></div><button onclick="addToTask('${c.id}')" class="text-gray-300 hover:text-green-500 p-2"><i class="fa-solid fa-plus-circle text-xl"></i></button></div>`;
+                item.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-bold text-gray-700 text-sm">${c.name}</div>
+                        <div class="text-[10px] text-gray-400 font-mono">${c.id}</div>
+                        <div class="flex mt-1 space-x-3 text-[10px]">
+                            <span class="text-blue-600 font-bold">Credit: ${c.credit}</span>
+                            <span class="text-red-600 font-bold">Balance: ${balance}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-[10px] text-gray-500 text-right mr-2">
+                            <div>W: <span class="font-bold ${stats.week==0?'text-red-500':'text-green-600'}">${stats.week}</span></div>
+                            <div>M: <span class="font-bold ${stats.month==0?'text-red-500':'text-green-600'}">${stats.month}</span></div>
+                        </div>
+                        <button onclick="addToTask('${c.id}')" class="text-gray-300 hover:text-green-500 p-2"><i class="fa-solid fa-plus-circle text-xl"></i></button>
+                    </div>`;
                 list.appendChild(item);
             });
         }
+
         function filterSidebarList(val) { applySidebarFilter(); }
         async function loadAssignedTasksForRep() { 
             const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', 'in', ['pending', 'responded']).get(); 
@@ -911,31 +932,54 @@
         }
         function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
         
+        // REQ: Show Balance, Table Date, Filter Balance > 0, Pencil to Plus icon
         function renderAcceptTasks() { 
-            document.getElementById('acceptTaskList').innerHTML = adminTasks.map(t => `
-            <div id="accept-${t.docId}" class="bg-white p-4 rounded shadow mb-3 border-l-4 border-primary relative">
-                <div class="pr-12">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="font-bold text-lg text-primary">${t.amount || '0'}</span>
-                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${t.orderDate}</span>
+            const latestTableDate = adminTasks.length > 0 ? (adminTasks[0].tableDate || "-") : "-";
+            const modalHeader = document.querySelector('#assignedTaskModal h3');
+            if(modalHeader) {
+                modalHeader.innerHTML = `<i class="fa-solid fa-bell mr-2"></i>Assigned Tasks <span class="text-xs font-normal opacity-80">(Data: ${latestTableDate})</span>`;
+            }
+
+            const displayTasks = adminTasks.filter(t => parseFloat(t.balance || 0) > 0);
+            const container = document.getElementById('acceptTaskList');
+            const noMsg = document.getElementById('noAssignedTasksMsg');
+
+            if (displayTasks.length === 0) {
+                container.innerHTML = '';
+                noMsg.classList.remove('hidden');
+            } else {
+                noMsg.classList.add('hidden');
+                container.innerHTML = displayTasks.map(t => `
+                <div id="accept-${t.docId}" class="bg-white p-4 rounded shadow mb-3 border-l-4 border-primary relative">
+                    <div class="pr-12">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-lg text-primary">${t.amount || '0'}</span>
+                            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${t.orderDate}</span>
+                        </div>
+                        <div class="font-bold text-gray-800 text-sm">${t.customerName}</div>
+                        <div class="text-xs text-gray-400 font-mono mb-1">${t.customerId}</div>
+                        
+                        <div class="mt-2 flex items-center text-sm">
+                            <span class="text-gray-500 mr-2">Total Balance:</span>
+                            <span class="font-bold text-red-600">₵ ${t.balance || '0.00'}</span>
+                        </div>
+
+                        <div class="text-sm text-gray-600 italic bg-yellow-50 p-2 rounded mt-2 border border-yellow-100">${t.taskDetail}</div>
                     </div>
-                    <div class="font-bold text-gray-800 text-sm">${t.customerName}</div>
-                    <div class="text-xs text-gray-400 font-mono mb-1">${t.customerId}</div>
-                    <div class="text-sm text-gray-600 italic bg-yellow-50 p-2 rounded mt-1 border border-yellow-100">${t.taskDetail}</div>
-                </div>
-                
-                <div class="absolute right-2 top-2 flex flex-col space-y-2">
-                    <button onclick="confirmTaskReceipt('${t.docId}')" class="bg-green-500 text-white w-10 h-10 rounded-full shadow hover:bg-green-600 flex items-center justify-center">
-                        <i class="fa-solid fa-check"></i>
-                    </button>
-                    <button onclick="remarkOnTask('${t.docId}')" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow hover:bg-blue-600 flex items-center justify-center">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                </div>
-            </div>`).join(''); 
+                    
+                    <div class="absolute right-2 top-2 flex flex-col space-y-2">
+                        <button onclick="confirmTaskReceipt('${t.docId}')" class="bg-green-500 text-white w-10 h-10 rounded-full shadow hover:bg-green-600 flex items-center justify-center">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                        <button onclick="addTaskFromAssigned('${t.docId}')" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow hover:bg-blue-600 flex items-center justify-center">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>`).join('');
+            }
             
-            document.getElementById('assignedCountBadge').innerText = adminTasks.length; 
-            document.getElementById('assignedCountBadge').classList.toggle('hidden', adminTasks.length === 0); 
+            document.getElementById('assignedCountBadge').innerText = displayTasks.length; 
+            document.getElementById('assignedCountBadge').classList.toggle('hidden', displayTasks.length === 0); 
         }
 
         async function confirmTaskReceipt(docId) {
@@ -954,15 +998,12 @@
             }
         }
 
-        async function remarkOnTask(docId) {
-            const remark = prompt("Enter remarks:");
-            if (remark && remark.trim() !== "") {
-                await db.collection('admin_tasks').doc(docId).update({
-                    repResponse: remark,
-                    status: 'responded', 
-                    responseDate: new Date().toISOString()
-                });
-                alert("Remark sent to Admin.");
+        // REQ: Direct add from Assigned Task Modal
+        function addTaskFromAssigned(docId) {
+            const task = adminTasks.find(t => t.docId === docId);
+            if (task) {
+                addToTask(task.customerId);
+                alert(`Added ${task.customerName} to Today's Task.`);
             }
         }
 
@@ -977,7 +1018,7 @@
         }
 
         function toggleSidebar() { document.getElementById('taskSidebar').classList.toggle('sidebar-closed'); document.getElementById('taskSidebar').classList.toggle('sidebar-open'); if(document.getElementById('taskSidebar').classList.contains('sidebar-open')) { applySidebarFilter(); } }
-        function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(myCustomers.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
+        function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(allSalesData.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
         window.removeFromTask = function(id) { todayTasks = todayTasks.filter(t => t.id !== id); saveTasksToCloud(); renderTasks(); }
         function renderTasks() { document.getElementById('todayTaskList').innerHTML = todayTasks.map(t => `<div class="bg-white p-4 rounded shadow border relative"><h4 class="font-bold">${t.name}</h4><button onclick="removeFromTask('${t.id}')" class="absolute top-2 right-2 text-red-500"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
         function shareTaskToGroup() { if(todayTasks.length === 0) return alert("Task list is empty"); let msg = `*${currentUser.name}'s Plan*\n${new Date().toLocaleDateString()}\n------------------\n`; todayTasks.forEach((t, i) => msg += `${i+1}. ${t.name}\n`); window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank'); }
@@ -1308,13 +1349,11 @@
             renderCartFab();
             if(!document.getElementById('cartModal').classList.contains('hidden')) renderCartList();
 
-            // REQ 1: Auto Pair (Fixed)
             if (!isAutoPair && change > 0) {
                 checkAndAddPair(product, change);
             }
         }
 
-        // REQ 1: Helper function for pairing
         function checkAndAddPair(product, change) {
             let pairName = null;
             const name = product.name;
@@ -1562,7 +1601,7 @@
 
         function updateAssignedBadge() {
             const badge = document.getElementById('assignedCountBadge');
-            const tasks = (typeof adminTasks !== 'undefined' && Array.isArray(adminTasks)) ? adminTasks : [];
+            const tasks = (typeof adminTasks !== 'undefined' && Array.isArray(adminTasks)) ? adminTasks.filter(t => parseFloat(t.balance || 0) > 0) : [];
             
             if (badge) {
                 if (tasks.length > 0) {
