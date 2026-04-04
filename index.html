@@ -304,10 +304,11 @@
                 <div class="p-3 bg-gray-100 border-b space-y-2">
                     <input type="text" placeholder="Filter list..." class="w-full p-2 text-sm border rounded" oninput="filterSidebarList(this.value)">
                     <select id="sidebarFilterMode" onchange="applySidebarFilter()" class="w-full p-2 text-sm border rounded bg-white font-bold text-gray-600">
-                        <option value="all">Show All Customers</option>
-                        <option value="missed_week">⚠️ Not Visited This Week</option>
-                        <option value="missed_month">⛔ Not Visited This Month</option>
-                    </select>
+    <option value="all">Show All Customers</option>
+    <option value="balance_desc">Sort by Balance (High to Low)</option> <!-- 新增 -->
+    <option value="missed_week">⚠️ Not Visited This Week</option>
+    <option value="missed_month">⛔ Not Visited This Month</option>
+</select>
                 </div>
                 <div id="customerSidebarList" class="flex-1 overflow-y-auto p-2 space-y-2 pb-20"></div>
             </div>
@@ -456,19 +457,31 @@
         </div>
     </div>
 
-    <!-- Assigned Task Modal -->
-    <div id="assignedTaskModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white w-full max-w-2xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-            <div class="p-4 bg-primary text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-bell mr-2"></i>Assigned Tasks</h3>
-                <button onclick="toggleAssignedModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
-                <div id="acceptTaskList" class="space-y-3"></div>
-                <div id="noAssignedTasksMsg" class="hidden text-center text-gray-400 mt-10"><i class="fa-solid fa-clipboard-check text-4xl mb-2"></i><p>No pending tasks assigned.</p></div>
+<!-- Assigned Task Modal -->
+<div id="assignedTaskModal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
+    <div class="bg-white w-full max-w-2xl h-5/6 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+        <div class="p-4 bg-primary text-white flex justify-between items-center">
+            <h3 class="font-bold text-lg"><i class="fa-solid fa-bell mr-2"></i>Accounts Receivable</h3>
+            <button onclick="toggleAssignedModal()" class="hover:text-red-200"><i class="fa-solid fa-times text-xl"></i></button>
+        </div>
+        
+        <!-- 新增：排序筛选区域 -->
+        <div class="p-2 bg-gray-100 border-b">
+            <select id="assignedSortSelect" onchange="renderAcceptTasks()" class="w-full p-2 text-sm border rounded bg-white font-bold text-gray-600">
+                <option value="time_desc">Sort by Time (Newest First)</option>
+                <option value="balance_desc">Sort by Balance (High to Low)</option>
+            </select>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <div id="acceptTaskList" class="space-y-3"></div>
+            <div id="noAssignedTasksMsg" class="hidden text-center text-gray-400 mt-10">
+                <i class="fa-solid fa-clipboard-check text-4xl mb-2"></i>
+                <p>No pending tasks assigned.</p>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Report Modal -->
     <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
@@ -513,6 +526,7 @@
             "11030": "KUMBALA",
             "10907": "ESTHER YEBOAH",
             "10596": "KOFI",
+            "11158": "ENOCH",
             "10595": "OBENG",
             "11033": "商宇琛",
             "10974": "徐亮",
@@ -586,7 +600,7 @@
 
         function loadCustomersCSV() { 
             Papa.parse("customers.csv", { 
-                download: true, header: true, skipEmptyLines: true, encoding: "UTF-8",
+                download: true, header: true, skipEmptyLines: true,
                 error: function(err, file, inputElem, reason) { alert("CSV Error: " + err.message); },
                 complete: function(results) { 
                     allSalesData = results.data.map(item => ({ 
@@ -595,7 +609,8 @@
                         csvRepName: (item.RepName||item.repname||"Sales").trim(), 
                         repCode: (item.Limit||item.limit||"").trim().toUpperCase(), 
                         phone: (item.Phone||item.phone||"").trim(), 
-                        credit: (item.Credit||item.credit||"0").trim() 
+                        credit: (item.Credit||item.credit||"0").trim(),
+                        balance: (item.Balance||item.balance||"0").trim()
                     })); 
 
                     if(currentUser && !currentUser.isAdmin) {
@@ -611,7 +626,7 @@
         
         function loadProductCSV() { 
             Papa.parse("products.csv", { 
-                download: true, header: true, skipEmptyLines: true, encoding: "UTF-8",
+                download: true, header: true, skipEmptyLines: true, 
                 complete: function(results) { 
                     allProductData = results.data.map(item => ({ 
                         code: (item.Code||item.code||"").trim(), 
@@ -644,6 +659,7 @@
                 document.body.classList.add('loaded');
                 if ("Notification" in window) Notification.requestPermission();
                 
+                // Trigger auto-sync of local CSV
                 syncLocalTasksCsvToFirebase();
 
                 initAdminReportFilters(); 
@@ -747,87 +763,102 @@
         }
         async function adminDeleteTask(id) { if(confirm('Delete/Cancel task?')) await db.collection('admin_tasks').doc(id).delete(); refreshData(); }
 
-        // REQ: Auto Sync with Dynamic Filename, Date, Balance, and Smart Dedup/Overwrite
-        async function syncLocalTasksCsvToFirebase() {
-            const csvFileName = prompt("Enter CSV Filename:", "tasks2026-02-18.csv");
-            if (!csvFileName) return;
+       // 修改 index.html 中的这个函数
+async function syncLocalTasksCsvToFirebase() {
+    // 1. 固定读取名为 tasks.csv 的活跃文件
+    const csvFileName = "tasks.csv"; 
 
-            const dateMatch = csvFileName.match(/\d{4}-\d{2}-\d{2}/);
-            const tableDate = dateMatch ? dateMatch[0] : new Date().toLocaleDateString();
+    // 2. 询问数据的日期（默认显示今天）
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const tableDate = prompt("正在同步 tasks.csv，请输入这批数据的标注日期：", todayStr);
 
-            Papa.parse(csvFileName, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                encoding: "UTF-8",
-                complete: async function(results) {
-                    const rows = results.data;
-                    if (rows.length === 0) return;
+    if (!tableDate) {
+        console.log("同步已取消");
+        return;
+    }
 
-                    const batch = db.batch();
-                    let count = 0;
+    Papa.parse(csvFileName, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        encoding: "UTF-8",
+        complete: async function(results) {
+            const rows = results.data;
+            if (rows.length === 0) return;
 
-                    const repMap = {};
-                    allSalesData.forEach(c => { if (c.repCode && c.csvRepName) repMap[c.csvRepName.toUpperCase()] = c.repCode; });
-                    for(let [k,v] of Object.entries(repDirectory)) { repMap[v.toUpperCase()] = k; }
+            const batch = db.batch();
+            let count = 0;
 
-                    for (const row of rows) {
-                        const code = (row['CODE'] || "").trim();
-                        const name = (row['NAME'] || "").trim();
-                        const amt = (row['AMOUNT'] || "").trim();
-                        const date = (row['DATE'] || "").trim();
-                        const repName = (row['REPNAME'] || "").trim();
-                        const mark = (row['MARK'] || "").trim();
-                        const balance = (row['BALANCE'] || "0").trim();
+            // 建立 Rep 映射
+            const repMap = {};
+            allSalesData.forEach(c => { if (c.repCode && c.csvRepName) repMap[c.csvRepName.toUpperCase()] = c.repCode; });
+            for(let [k,v] of Object.entries(repDirectory)) { repMap[v.toUpperCase()] = k; }
 
-                        if (repName && code) {
-                            let targetRepCode = repMap[repName.toUpperCase()];
-                            if (targetRepCode) {
-                                // 1. Check for exact duplicate
-                                const exactMatch = adminTasks.find(t => 
-                                    t.customerId === code && t.amount === amt && t.orderDate === date
-                                );
-                                if (exactMatch) continue;
+            for (const row of rows) {
+                const code = (row['CODE'] || "").trim();
+                const name = (row['NAME'] || "").trim();
+                const amt = (row['AMOUNT'] || "").trim();
+                const date = (row['DATE'] || "").trim();
+                const repName = (row['REPNAME'] || "").trim();
+                const mark = (row['MARK'] || "").trim();
+                const balance = (row['BALANCE'] || "0").trim();
 
-                                // 2. Check for same customer ID but different date (overwrite/replace pending)
-                                const oldTasks = adminTasks.filter(t => t.customerId === code && t.status === 'pending');
-                                oldTasks.forEach(old => {
-                                    batch.delete(db.collection('admin_tasks').doc(old.docId));
-                                });
+                if (repName && code) {
+                    let targetRepCode = repMap[repName] || repMap[repName.toUpperCase()];
+                    if (targetRepCode) {
+                        
+                        // 【核心去重逻辑改进】
+                        
+                        // 1. 检查是否存在“完全一模一样”的任务（ID + 金额 + 日期 + 业务员）
+                        // 如果一模一样，我们不做任何操作（不删除也不增加），直接跳过
+                        const exactMatch = adminTasks.find(t => 
+                            t.customerId === code && 
+                            t.amount === amt && 
+                            t.orderDate === date && 
+                            t.repCode === targetRepCode
+                        );
 
-                                // 3. Set New Task
-                                const ref = db.collection('admin_tasks').doc();
-                                batch.set(ref, {
-                                    repCode: targetRepCode,
-                                    repName: repName,
-                                    customerId: code,
-                                    customerName: name,
-                                    amount: amt,
-                                    orderDate: date,
-                                    taskDetail: mark,
-                                    balance: balance,
-                                    tableDate: tableDate,
-                                    status: 'pending',
-                                    assignedDate: new Date().toLocaleDateString(),
-                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                                });
-                                count++;
-                            }
-                        }
-                    }
+                        if (exactMatch) continue;
 
-                    if (count > 0) {
-                        await batch.commit();
-                        alert(`Synced ${count} tasks from ${csvFileName}`);
-                        refreshData();
-                    } else {
-                        alert("No new or modified tasks to sync.");
+                        // 2. 如果不完全一样（比如日期变了，或者换了业务员）
+                        // 只要这个客户在数据库里有任何“Pending（待处理）”的任务，全部删掉！
+                        // 这样能确保每个客户永远只有一个最新的任务在销售员手机上。
+                        const oldTasks = adminTasks.filter(t => t.customerId === code && t.status === 'pending');
+                        oldTasks.forEach(old => {
+                            batch.delete(db.collection('admin_tasks').doc(old.docId));
+                        });
+
+                        // 3. 写入新的任务数据
+                        const ref = db.collection('admin_tasks').doc();
+                        batch.set(ref, {
+                            repCode: targetRepCode,
+                            repName: repName,
+                            customerId: code,
+                            customerName: name,
+                            amount: amt,
+                            orderDate: date,
+                            taskDetail: mark,
+                            balance: balance,
+                            tableDate: tableDate,
+                            status: 'pending',
+                            assignedDate: new Date().toLocaleDateString(),
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        count++;
                     }
                 }
-            });
-        }
+            }
 
-        function renderAdminReports() { 
+            if (count > 0) {
+                await batch.commit();
+                alert(`同步完成！已清理旧数据并导入 ${count} 条新任务。`);
+                refreshData();
+            } else {
+                alert("没有发现需要更新的数据。");
+            }
+        }
+    });
+}        function renderAdminReports() { 
             const dateVal = document.getElementById('adminReportDateFilter').value; 
             const repVal = document.getElementById('adminReportRepFilter').value; 
             const textVal = document.getElementById('adminReportTextFilter').value.toLowerCase(); 
@@ -886,45 +917,65 @@
             const now = new Date(); const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay() + 1); startOfWeek.setHours(0,0,0,0); const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             let week = 0, month = 0; globalHistory.forEach(h => { if (h.customerId === custId) { const d = new Date(h.date); if (d >= startOfWeek) week++; if (d >= startOfMonth) month++; } }); return { week, month };
         }
-
-        // REQ: Display Credit and Balance in Sidebar
         function applySidebarFilter() {
-            const mode = document.getElementById('sidebarFilterMode').value; const q = document.querySelector('#taskSidebar input').value.toLowerCase();
-            
-            const balanceMap = {};
-            adminTasks.forEach(t => { balanceMap[t.customerId] = t.balance; });
+    const mode = document.getElementById('sidebarFilterMode').value; 
+    const q = document.querySelector('#taskSidebar input').value.toLowerCase();
+    
+    // 【修改这里】：从 adminTasks 里抓取管理员填写的那个 tableDate
+    const taskDate = (adminTasks.length > 0 && adminTasks[0].tableDate) ? adminTasks[0].tableDate : "No Data";
+    
+    const sidebarTitle = document.querySelector('#taskSidebar h3');
+    if (sidebarTitle) {
+        // 让侧边栏标题显示跟小铃铛一样的日期
+        sidebarTitle.innerHTML = `Select Customers <span class="text-[10px] font-normal opacity-80">(${taskDate})</span>`;
+    }
 
-            let filtered = myCustomers.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
-            if (mode === 'missed_week') { filtered = filtered.filter(c => getCustomerStats(c.id).week === 0); } 
-            else if (mode === 'missed_month') { filtered = filtered.filter(c => getCustomerStats(c.id).month === 0); }
-            
-            const list = document.getElementById('customerSidebarList'); list.innerHTML = '';
-            filtered.slice(0, 200).forEach(c => {
-                const stats = getCustomerStats(c.id);
-                const balance = balanceMap[c.id] || "0.00";
-                
-                const item = document.createElement('div');
-                item.className = "flex justify-between items-center bg-white p-3 rounded border hover:shadow cursor-pointer mb-2";
-                item.innerHTML = `
-                    <div class="flex-1">
-                        <div class="font-bold text-gray-700 text-sm">${c.name}</div>
-                        <div class="text-[10px] text-gray-400 font-mono">${c.id}</div>
-                        <div class="flex mt-1 space-x-3 text-[10px]">
-                            <span class="text-blue-600 font-bold">Credit: ${c.credit}</span>
-                            <span class="text-red-600 font-bold">Balance: ${balance}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="text-[10px] text-gray-500 text-right mr-2">
-                            <div>W: <span class="font-bold ${stats.week==0?'text-red-500':'text-green-600'}">${stats.week}</span></div>
-                            <div>M: <span class="font-bold ${stats.month==0?'text-red-500':'text-green-600'}">${stats.month}</span></div>
-                        </div>
-                        <button onclick="addToTask('${c.id}')" class="text-gray-300 hover:text-green-500 p-2"><i class="fa-solid fa-plus-circle text-xl"></i></button>
-                    </div>`;
-                list.appendChild(item);
-            });
-        }
+    // ... 后面原有的过滤代码不变 ...
+    
+    // 1. 初步筛选：根据搜索框过滤名字或ID
+    let filtered = myCustomers.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
 
+    // 2. 应用排序或特殊筛选逻辑
+    if (mode === 'balance_desc') {
+        // 按余额数值从大到小排序
+        filtered.sort((a, b) => parseFloat(b.balance || 0) - parseFloat(a.balance || 0));
+    } else if (mode === 'missed_week') { 
+        filtered = filtered.filter(c => getCustomerStats(c.id).week === 0); 
+    } else if (mode === 'missed_month') { 
+        filtered = filtered.filter(c => getCustomerStats(c.id).month === 0); 
+    }
+    
+    const list = document.getElementById('customerSidebarList'); 
+    list.innerHTML = '';
+
+    // 3. 渲染列表
+    filtered.slice(0, 200).forEach(c => {
+        const stats = getCustomerStats(c.id);
+        const balValue = parseFloat(c.balance || 0);
+        
+        const item = document.createElement('div');
+        item.className = "flex justify-between items-center bg-white p-3 rounded border hover:shadow cursor-pointer mb-2";
+        item.innerHTML = `
+            <div class="flex-1">
+                <div class="font-bold text-gray-800 text-sm leading-tight">${c.name}</div>
+                <div class="text-[10px] text-gray-400 font-mono">${c.id}</div>
+                <div class="flex mt-1 space-x-4 text-[11px]">
+                    <span class="text-blue-700 font-bold">Credit: ${c.credit}</span>
+                    <span class="${balValue > 0 ? 'text-red-600' : 'text-gray-500'} font-bold">Balance: ${c.balance}</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="text-[10px] text-gray-400 text-right mr-1">
+                    <div>W: <span class="font-bold ${stats.week==0?'text-red-500':'text-green-600'}">${stats.week}</span></div>
+                    <div>M: <span class="font-bold ${stats.month==0?'text-red-500':'text-green-600'}">${stats.month}</span></div>
+                </div>
+                <button onclick="addToTask('${c.id}')" class="text-gray-300 hover:text-primary p-2 transition">
+                    <i class="fa-solid fa-plus-circle text-2xl"></i>
+                </button>
+            </div>`;
+        list.appendChild(item);
+    });
+}
         function filterSidebarList(val) { applySidebarFilter(); }
         async function loadAssignedTasksForRep() { 
             const snap = await db.collection('admin_tasks').where('repCode', '==', currentUser.code).where('status', 'in', ['pending', 'responded']).get(); 
@@ -932,55 +983,91 @@
         }
         function toggleAssignedModal() { document.getElementById('assignedTaskModal').classList.toggle('hidden'); renderAcceptTasks(); }
         
-        // REQ: Show Balance, Table Date, Filter Balance > 0, Pencil to Plus icon
-        function renderAcceptTasks() { 
-            const latestTableDate = adminTasks.length > 0 ? (adminTasks[0].tableDate || "-") : "-";
-            const modalHeader = document.querySelector('#assignedTaskModal h3');
-            if(modalHeader) {
-                modalHeader.innerHTML = `<i class="fa-solid fa-bell mr-2"></i>Assigned Tasks <span class="text-xs font-normal opacity-80">(Data: ${latestTableDate})</span>`;
+function renderAcceptTasks() { 
+    // 1. 获取最新的表格日期并更新标题显示
+    const latestTableDate = adminTasks.length > 0 ? (adminTasks[0].tableDate || "-") : "-";
+    const modalHeader = document.querySelector('#assignedTaskModal h3');
+    if(modalHeader) {
+        modalHeader.innerHTML = `<i class="fa-solid fa-bell mr-2"></i>Accounts Receivable <span class="text-xs font-normal opacity-80">(Data: ${latestTableDate})</span>`;
+    }
+
+    // 2. 获取当前的排序模式 (由下拉框决定)
+    const sortMode = document.getElementById('assignedSortSelect') ? document.getElementById('assignedSortSelect').value : 'time_desc';
+
+    // 3. 过滤逻辑：只显示余额 > 0 的任务
+    let displayTasks = adminTasks.filter(t => parseFloat(t.balance || 0) > 0);
+
+    // 4. 【核心排序代码】：处理时间或余额降序
+    if (sortMode === 'time_desc') {
+        // 按照 tasks.csv 里的 DATE 降序排列 (最新的日期在上)
+        displayTasks.sort((a, b) => {
+            const dateA = new Date(a.orderDate || 0).getTime();
+            const dateB = new Date(b.orderDate || 0).getTime();
+            // 如果日期相同，按上传顺序排
+            if (dateB === dateA) {
+                const tsA = a.timestamp ? (a.timestamp.seconds || 0) : 0;
+                const tsB = b.timestamp ? (b.timestamp.seconds || 0) : 0;
+                return tsB - tsA;
             }
+            return dateB - dateA;
+        });
+    } else if (sortMode === 'balance_desc') {
+        // 按照 余额 降序排列 (欠款最多的在上)
+        displayTasks.sort((a, b) => parseFloat(b.balance || 0) - parseFloat(a.balance || 0));
+    }
 
-            const displayTasks = adminTasks.filter(t => parseFloat(t.balance || 0) > 0);
-            const container = document.getElementById('acceptTaskList');
-            const noMsg = document.getElementById('noAssignedTasksMsg');
+    const container = document.getElementById('acceptTaskList');
+    const noMsg = document.getElementById('noAssignedTasksMsg');
 
-            if (displayTasks.length === 0) {
-                container.innerHTML = '';
-                noMsg.classList.remove('hidden');
-            } else {
-                noMsg.classList.add('hidden');
-                container.innerHTML = displayTasks.map(t => `
-                <div id="accept-${t.docId}" class="bg-white p-4 rounded shadow mb-3 border-l-4 border-primary relative">
-                    <div class="pr-12">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="font-bold text-lg text-primary">${t.amount || '0'}</span>
-                            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${t.orderDate}</span>
-                        </div>
-                        <div class="font-bold text-gray-800 text-sm">${t.customerName}</div>
-                        <div class="text-xs text-gray-400 font-mono mb-1">${t.customerId}</div>
-                        
-                        <div class="mt-2 flex items-center text-sm">
-                            <span class="text-gray-500 mr-2">Total Balance:</span>
-                            <span class="font-bold text-red-600">₵ ${t.balance || '0.00'}</span>
-                        </div>
+    // 5. 渲染列表
+    if (displayTasks.length === 0) {
+        container.innerHTML = '';
+        noMsg.classList.remove('hidden');
+    } else {
+        noMsg.classList.add('hidden');
+        container.innerHTML = displayTasks.map(t => `
+        <div id="accept-${t.docId}" class="bg-white p-4 rounded shadow mb-3 border-l-4 border-primary relative">
+            <div class="pr-12">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="font-bold text-lg text-primary">${t.amount || '0'}</span>
+                    <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold">DATE: ${t.orderDate}</span>
+                </div>
+                <div class="font-bold text-gray-800 text-sm">${t.customerName}</div>
+                <div class="text-xs text-gray-400 font-mono mb-1">${t.customerId}</div>
+                
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-gray-500 mr-2">Total Balance:</span>
+                    <span class="font-bold text-red-600">₵ ${t.balance || '0.00'}</span>
+                </div>
 
-                        <div class="text-sm text-gray-600 italic bg-yellow-50 p-2 rounded mt-2 border border-yellow-100">${t.taskDetail}</div>
-                    </div>
-                    
-                    <div class="absolute right-2 top-2 flex flex-col space-y-2">
-                        <button onclick="confirmTaskReceipt('${t.docId}')" class="bg-green-500 text-white w-10 h-10 rounded-full shadow hover:bg-green-600 flex items-center justify-center">
-                            <i class="fa-solid fa-check"></i>
-                        </button>
-                        <button onclick="addTaskFromAssigned('${t.docId}')" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow hover:bg-blue-600 flex items-center justify-center">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
-                </div>`).join('');
-            }
+                <div class="text-sm text-gray-600 italic bg-yellow-50 p-2 rounded mt-2 border border-yellow-100">${t.taskDetail}</div>
+                
+                <!-- 显示已有的备注 -->
+                ${t.repResponse ? `<div class="mt-2 p-2 bg-blue-50 text-xs text-blue-700 rounded border border-blue-100"><b>Remark:</b> ${t.repResponse}</div>` : ''}
+            </div>
             
-            document.getElementById('assignedCountBadge').innerText = displayTasks.length; 
-            document.getElementById('assignedCountBadge').classList.toggle('hidden', displayTasks.length === 0); 
-        }
+            <!-- 按钮组 -->
+            <div class="absolute right-2 top-2 flex flex-col space-y-2">
+                <!-- 确认收款 -->
+                <button onclick="confirmTaskReceipt('${t.docId}')" class="bg-green-500 text-white w-10 h-10 rounded-full shadow hover:bg-green-600 flex items-center justify-center">
+                    <i class="fa-solid fa-check"></i>
+                </button>
+                <!-- 加入今日拜访 -->
+                <button onclick="addTaskFromAssigned('${t.docId}')" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow hover:bg-blue-600 flex items-center justify-center">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <!-- 填写/修改备注 -->
+                <button onclick="remarkOnTask('${t.docId}')" class="bg-yellow-500 text-white w-10 h-10 rounded-full shadow hover:bg-yellow-600 flex items-center justify-center">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+            </div>
+        </div>`).join('');
+    }
+    
+    // 更新外部提醒数字
+    document.getElementById('assignedCountBadge').innerText = displayTasks.length; 
+    document.getElementById('assignedCountBadge').classList.toggle('hidden', displayTasks.length === 0); 
+}
 
         async function confirmTaskReceipt(docId) {
             if (confirm("Confirm receipt of order amount?")) { 
@@ -997,13 +1084,29 @@
                 }, 500);
             }
         }
-
-        // REQ: Direct add from Assigned Task Modal
-        function addTaskFromAssigned(docId) {
-            const task = adminTasks.find(t => t.docId === docId);
-            if (task) {
-                addToTask(task.customerId);
-                alert(`Added ${task.customerName} to Today's Task.`);
+// 从分配的任务中小铃铛里直接添加客户到今日计划
+function addTaskFromAssigned(docId) {
+    const task = adminTasks.find(t => t.docId === docId);
+    if (task) {
+        // 使用原有的 addToTask 函数，传入客户 ID
+        addToTask(task.customerId);
+        
+        // 提示用户已添加
+        alert(`Added ${task.customerName} to Today's Task.`);
+        
+        // 可选：添加后自动关闭弹窗
+        // toggleAssignedModal(); 
+    }
+}
+        async function remarkOnTask(docId) {
+            const remark = prompt("Enter remarks:");
+            if (remark && remark.trim() !== "") {
+                await db.collection('admin_tasks').doc(docId).update({
+                    repResponse: remark,
+                    status: 'responded', 
+                    responseDate: new Date().toISOString()
+                });
+                alert("Remark sent to Admin.");
             }
         }
 
@@ -1018,7 +1121,7 @@
         }
 
         function toggleSidebar() { document.getElementById('taskSidebar').classList.toggle('sidebar-closed'); document.getElementById('taskSidebar').classList.toggle('sidebar-open'); if(document.getElementById('taskSidebar').classList.contains('sidebar-open')) { applySidebarFilter(); } }
-        function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(allSalesData.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
+        function addToTask(id) { if (!todayTasks.some(t => t.id === id)) { todayTasks.push(myCustomers.find(c => c.id === id)); saveTasksToCloud(); renderTasks(); } }
         window.removeFromTask = function(id) { todayTasks = todayTasks.filter(t => t.id !== id); saveTasksToCloud(); renderTasks(); }
         function renderTasks() { document.getElementById('todayTaskList').innerHTML = todayTasks.map(t => `<div class="bg-white p-4 rounded shadow border relative"><h4 class="font-bold">${t.name}</h4><button onclick="removeFromTask('${t.id}')" class="absolute top-2 right-2 text-red-500"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
         function shareTaskToGroup() { if(todayTasks.length === 0) return alert("Task list is empty"); let msg = `*${currentUser.name}'s Plan*\n${new Date().toLocaleDateString()}\n------------------\n`; todayTasks.forEach((t, i) => msg += `${i+1}. ${t.name}\n`); window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank'); }
@@ -1349,11 +1452,13 @@
             renderCartFab();
             if(!document.getElementById('cartModal').classList.contains('hidden')) renderCartList();
 
+            // REQ 1: Auto Pair (Fixed)
             if (!isAutoPair && change > 0) {
                 checkAndAddPair(product, change);
             }
         }
 
+        // REQ 1: Helper function for pairing
         function checkAndAddPair(product, change) {
             let pairName = null;
             const name = product.name;
@@ -1601,7 +1706,7 @@
 
         function updateAssignedBadge() {
             const badge = document.getElementById('assignedCountBadge');
-            const tasks = (typeof adminTasks !== 'undefined' && Array.isArray(adminTasks)) ? adminTasks.filter(t => parseFloat(t.balance || 0) > 0) : [];
+            const tasks = (typeof adminTasks !== 'undefined' && Array.isArray(adminTasks)) ? adminTasks : [];
             
             if (badge) {
                 if (tasks.length > 0) {
